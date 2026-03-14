@@ -1,8 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, Env, Symbol,
-};
+use soroban_sdk::{contract, contractevent, contractimpl, contracttype, Address, Env, Symbol};
 
 #[contracttype]
 #[derive(Clone)]
@@ -11,17 +9,21 @@ pub enum DataKey {
     Role(Address, Symbol),
 }
 
-#[contracttype]
+#[contractevent(topics = ["role_assigned"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RoleAssigned {
+    #[topic]
     pub target: Address,
+    #[topic]
     pub role: Symbol,
 }
 
-#[contracttype]
+#[contractevent(topics = ["role_revoked"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RoleRevoked {
+    #[topic]
     pub target: Address,
+    #[topic]
     pub role: Symbol,
 }
 
@@ -40,29 +42,35 @@ impl ContractRoleRegistry {
 
     /// Assigns a role to a given address. Requires admin authorization.
     pub fn assign_role(env: Env, target: Address, role: Symbol) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("Not initialized");
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .expect("Not initialized");
         admin.require_auth();
 
         let key = DataKey::Role(target.clone(), role.clone());
         if !env.storage().persistent().has(&key) {
             env.storage().persistent().set(&key, &());
-            
-            // Emit role assignment event
-            env.events().publish((), RoleAssigned { target, role });
+
+            RoleAssigned { target, role }.publish(&env);
         }
     }
 
     /// Revokes a role. Requires admin authorization.
     pub fn revoke_role(env: Env, target: Address, role: Symbol) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("Not initialized");
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .expect("Not initialized");
         admin.require_auth();
 
         let key = DataKey::Role(target.clone(), role.clone());
         if env.storage().persistent().has(&key) {
             env.storage().persistent().remove(&key);
-            
-            // Emit role revocation event
-            env.events().publish((), RoleRevoked { target, role });
+
+            RoleRevoked { target, role }.publish(&env);
         }
     }
 
@@ -73,7 +81,10 @@ impl ContractRoleRegistry {
 
     /// Retrieves the current admin address.
     pub fn get_admin(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Admin).expect("Not initialized")
+        env.storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .expect("Not initialized")
     }
 }
 

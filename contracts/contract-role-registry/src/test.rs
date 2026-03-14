@@ -54,10 +54,9 @@ fn test_role_assignment() {
 #[should_panic]
 fn test_unauthorized_assignment() {
     let env = Env::default();
-    // We don't mock auth here to let it fail or we mock it for the wrong user
-    
+    // Do not mock auths: require_auth() should fail.
+
     let admin = Address::generate(&env);
-    let non_admin = Address::generate(&env);
     let target = Address::generate(&env);
     let role = symbol_short!("GAME");
 
@@ -66,7 +65,6 @@ fn test_unauthorized_assignment() {
 
     client.init(&admin);
 
-    // This should panic because non_admin is not admin
-    env.set_authorizer(&non_admin);
+    // This should panic because admin auth is missing.
     client.assign_role(&target, &role);
 }
