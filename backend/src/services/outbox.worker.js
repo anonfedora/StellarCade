@@ -255,7 +255,7 @@ const startWorker = async (options = {}) => {
     maxProcessingTime,
   });
 
-  let running = true;
+let running = true;
   
   while (running) {
     try {
