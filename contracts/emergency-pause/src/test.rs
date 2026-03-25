@@ -47,11 +47,20 @@ fn test_pause_and_unpause() {
     let (client, admin, _) = setup(&env);
     env.mock_all_auths();
 
-    client.pause(&admin);
+    let reason_code = 101;
+    client.pause(&admin, &reason_code);
     assert!(client.is_paused());
+
+    let metadata = client.get_pause_metadata().unwrap();
+    assert_eq!(metadata.reason_code, reason_code);
+    assert_eq!(metadata.admin, admin);
 
     client.unpause(&admin);
     assert!(!client.is_paused());
+    
+    // Metadata should persist after unpausing (as "latest")
+    let persistent_metadata = client.get_pause_metadata().unwrap();
+    assert_eq!(persistent_metadata.reason_code, reason_code);
 }
 
 // -------------------------------------------------------------------
@@ -64,8 +73,8 @@ fn test_pause_when_already_paused_errors() {
     let (client, admin, _) = setup(&env);
     env.mock_all_auths();
 
-    client.pause(&admin);
-    let result = client.try_pause(&admin);
+    client.pause(&admin, &1);
+    let result = client.try_pause(&admin, &2);
     assert!(result.is_err());
 }
 
@@ -90,7 +99,7 @@ fn test_non_admin_cannot_pause() {
     env.mock_all_auths();
 
     let stranger = Address::generate(&env);
-    let result = client.try_pause(&stranger);
+    let result = client.try_pause(&stranger, &1);
     assert!(result.is_err());
 }
 
@@ -100,7 +109,7 @@ fn test_non_admin_cannot_unpause() {
     let (client, admin, _) = setup(&env);
     env.mock_all_auths();
 
-    client.pause(&admin);
+    client.pause(&admin, &1);
 
     let stranger = Address::generate(&env);
     let result = client.try_unpause(&stranger);
@@ -129,7 +138,7 @@ fn test_require_not_paused_panics_when_paused() {
     let (client, admin, contract_id) = setup(&env);
     env.mock_all_auths();
 
-    client.pause(&admin);
+    client.pause(&admin, &1);
     env.as_contract(&contract_id, || {
         require_not_paused(&env);
     });
@@ -147,13 +156,28 @@ fn test_full_pause_cycle() {
 
     assert!(!client.is_paused());
 
-    client.pause(&admin);
+    client.pause(&admin, &1);
     assert!(client.is_paused());
 
     client.unpause(&admin);
     assert!(!client.is_paused());
 
     // Can pause again after unpausing
-    client.pause(&admin);
+    client.pause(&admin, &2);
     assert!(client.is_paused());
+    
+    let metadata = client.get_pause_metadata().unwrap();
+    assert_eq!(metadata.reason_code, 2);
+}
+
+// -------------------------------------------------------------------
+// 7. Metadata specifics
+// -------------------------------------------------------------------
+
+#[test]
+fn test_get_metadata_returns_none_initially() {
+    let env = Env::default();
+    let (client, _, _) = setup(&env);
+    
+    assert!(client.get_pause_metadata().is_none());
 }

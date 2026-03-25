@@ -18,6 +18,15 @@ use soroban_sdk::{contract, contracterror, contractevent, contractimpl, contract
 pub enum DataKey {
     Admin,
     Paused,
+    PauseMetadata,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PauseMetadata {
+    pub reason_code: u32,
+    pub timestamp: u64,
+    pub admin: Address,
 }
 
 // ---------------------------------------------------------------------------
@@ -42,6 +51,7 @@ pub enum Error {
 #[contractevent]
 pub struct Paused {
     pub admin: Address,
+    pub reason_code: u32,
 }
 
 #[contractevent]
@@ -69,16 +79,24 @@ impl EmergencyPause {
         Ok(())
     }
 
-    /// Pause the contract. Only callable by admin. Errors if already paused.
-    pub fn pause(env: Env, admin: Address) -> Result<(), Error> {
+    /// Pause the contract with a reason code. Only callable by admin. Errors if already paused.
+    pub fn pause(env: Env, admin: Address, reason_code: u32) -> Result<(), Error> {
         require_admin(&env, &admin)?;
 
         if is_paused_internal(&env) {
             return Err(Error::AlreadyPaused);
         }
 
+        let metadata = PauseMetadata {
+            reason_code,
+            timestamp: env.ledger().timestamp(),
+            admin: admin.clone(),
+        };
+
         env.storage().instance().set(&DataKey::Paused, &true);
-        Paused { admin }.publish(&env);
+        env.storage().instance().set(&DataKey::PauseMetadata, &metadata);
+        
+        Paused { admin, reason_code }.publish(&env);
         Ok(())
     }
 
@@ -98,6 +116,11 @@ impl EmergencyPause {
     /// Check if the contract is currently paused.
     pub fn is_paused(env: Env) -> bool {
         is_paused_internal(&env)
+    }
+
+    /// Get the current or latest pause metadata.
+    pub fn get_pause_metadata(env: Env) -> Option<PauseMetadata> {
+        env.storage().instance().get(&DataKey::PauseMetadata)
     }
 }
 
