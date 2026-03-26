@@ -6,8 +6,12 @@
  * retry/dismiss actions, and optional debug metadata.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppError } from '../../types/errors';
+import {
+  isBannerDismissed,
+  persistBannerDismissal,
+} from '../../services/global-state-store';
 import {
   ErrorNoticeData,
   ErrorNoticeOptions,
@@ -44,6 +48,12 @@ export interface ErrorNoticeProps {
   testId?: string;
   /** Whether component is visible (for controlled usage) */
   visible?: boolean;
+  /** Persist dismissals across reloads for this notice (default: false). */
+  persistDismissal?: boolean;
+  /** Stable key used to store dismissal state when persisted. */
+  dismissalKey?: string;
+  /** Versioned identity used to reset persisted dismissals for new messages. */
+  dismissalIdentity?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,18 +75,20 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ debug, testId }) => {
     >
       <summary className="error-notice__debug-summary">Debug Info</summary>
       <div className="error-notice__debug-content">
-        {debug.originalError && (
+        {!!debug.originalError && (
           <div className="error-notice__debug-section">
             <strong>Original Error:</strong>
-            <pre className="error-notice__debug-pre">
-              {debug.originalError instanceof Error 
+            <pre 
+              className="error-notice__debug-pre"
+              data-testid={testId ? `${testId}-debug-original` : 'error-notice-debug-original'}
+            >
+              {debug.originalError instanceof Error
                 ? debug.originalError.stack || debug.originalError.message
                 : JSON.stringify(debug.originalError, null, 2)
               }
             </pre>
           </div>
-        )}
-        {debug.context && Object.keys(debug.context).length > 0 && (
+        )}        {debug.context && Object.keys(debug.context).length > 0 && (
           <div className="error-notice__debug-section">
             <strong>Context:</strong>
             <pre className="error-notice__debug-pre">
@@ -109,12 +121,15 @@ export const ErrorNotice: React.FC<ErrorNoticeProps> = ({
   className = '',
   testId = 'error-notice',
   visible = true,
+  persistDismissal = false,
+  dismissalKey = 'error-notice',
+  dismissalIdentity,
 }) => {
-  const [isVisible, setIsVisible] = useState(visible);
+  const [isVisible, setIsVisible] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
   // Normalize error data
-  const errorData: ErrorNoticeData | null = React.useMemo(() => {
+  const errorData: ErrorNoticeData | null = useMemo(() => {
     if (!error) return null;
     
     try {
@@ -127,10 +142,44 @@ export const ErrorNotice: React.FC<ErrorNoticeProps> = ({
     }
   }, [error, options]);
 
+  const resolvedDismissalIdentity =
+    dismissalIdentity ??
+    (errorData
+      ? `${errorData.domain}:${errorData.code}:${errorData.message}`
+      : 'no-error');
+
   // Handle visibility changes
   useEffect(() => {
-    setIsVisible(visible);
-  }, [visible]);
+    if (!visible || !errorData) {
+      setIsVisible(false);
+      return;
+    }
+    if (persistDismissal) {
+      setIsVisible(!isBannerDismissed(dismissalKey, resolvedDismissalIdentity));
+      return;
+    }
+    setIsVisible(true);
+  }, [visible, errorData, persistDismissal, dismissalKey, resolvedDismissalIdentity]);
+
+  // Handle dismiss action
+  const handleDismiss = useCallback(() => {
+    setIsVisible(false);
+    if (persistDismissal) {
+      persistBannerDismissal(dismissalKey, resolvedDismissalIdentity, true);
+    }
+    onDismiss?.();
+  }, [onDismiss, persistDismissal, dismissalKey, resolvedDismissalIdentity]);
+
+  // Handle retry action
+  const handleRetry = useCallback(async () => {
+    if (!onRetry) return;
+    setIsRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [onRetry]);
 
   // Auto-dismiss logic
   useEffect(() => {
@@ -153,28 +202,8 @@ export const ErrorNotice: React.FC<ErrorNoticeProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, errorData, autoDismiss, error]);
-
-  // Handle retry action
-  const handleRetry = useCallback(async () => {
-    if (isRetrying || !onRetry) return;
-
-    setIsRetrying(true);
-    try {
-      await onRetry();
-    } catch (e) {
-      // Let the error bubble up to be handled by parent
-      throw e;
-    } finally {
-      setIsRetrying(false);
-    }
-  }, [isRetrying, onRetry]);
-
-  // Handle dismiss action
-  const handleDismiss = useCallback(() => {
-    setIsVisible(false);
-    onDismiss?.();
-  }, [onDismiss]);
+    return undefined;
+  }, [isVisible, errorData, autoDismiss, error, handleDismiss]);
 
   // Don't render if no error or not visible
   if (!errorData || !isVisible) {
