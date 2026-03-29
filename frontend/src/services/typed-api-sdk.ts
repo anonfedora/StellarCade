@@ -37,6 +37,7 @@ import type {
   WithdrawResponse,
   WalletAmountRequest,
 } from "../types/api-client";
+import { dispatchApiTrace } from "../types/api-trace";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -268,6 +269,9 @@ export class ApiClient {
 
     const url = `${this._baseUrl}${path}`;
 
+    // Generate unique trace ID for this request
+    const traceId = `api-req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     // ── Retry loop ───────────────────────────────────────────────────────────
     let lastError: ApiClientError | undefined;
 
@@ -380,6 +384,34 @@ export class ApiClient {
             attempt,
             status: response.status,
           }),
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await sleep(INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1));
+      }
+
+      const startTime = Date.now();
+      dispatchApiTrace({
+        traceId: attempt > 0 ? `${traceId}-retry-${attempt}` : traceId,
+        source: "ApiClient",
+        method,
+        url,
+        startTime,
+        endTime: null,
+        durationMs: null,
+        status: "pending",
+      });
+
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method,
+          headers,
+          ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
+      } catch (networkErr) {
+        // Network failure (fetch threw) — map and retry
+        const mappedNetErr = normalizeApiClientError(
+          mapRpcError(networkErr, { url, attempt }),
           {
             status: response.status,
             originalMessage:
@@ -401,6 +433,94 @@ export class ApiClient {
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);
+
+        dispatchApiTrace({
+          traceId: attempt > 0 ? `${traceId}-retry-${attempt}` : traceId,
+          source: "ApiClient",
+          method,
+          url,
+          startTime,
+          endTime: Date.now(),
+          durationMs: Date.now() - startTime,
+          status: "error",
+          errorData: mappedNetErr,
+        });
+
+        lastError = mappedNetErr;
+        if (mappedNetErr.severity === ErrorSeverity.RETRYABLE) continue;
+        return { success: false, error: mappedNetErr };
+      }
+
+      if (response.ok) {
+        const data = (await response.json()) as T;
+        dispatchApiTrace({
+          traceId: attempt > 0 ? `${traceId}-retry-${attempt}` : traceId,
+          source: "ApiClient",
+          method,
+          url,
+          startTime,
+          endTime: Date.now(),
+          durationMs: Date.now() - startTime,
+          status: "success",
+          statusCode: response.status,
+        });
+        return { success: true, data };
+      }
+
+      // Parse error body — backend emits { error: { message, code, status } }
+      // or { message }. We pass the parsed object to mapApiError.
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+      } catch {
+        errorBody = { status: response.status };
+      }
+
+      // Attach the HTTP status to whatever shape was returned so mapApiError
+      // can pattern-match on it consistently.
+      const rawWithStatus =
+        typeof errorBody === "object" && errorBody !== null
+          ? {
+              ...(errorBody as Record<string, unknown>),
+              status: response.status,
+            }
+          : { status: response.status };
+
+      const mapped = normalizeApiClientError(
+        mapApiError(rawWithStatus, {
+          url,
+          attempt,
+          status: response.status,
+        }),
+        {
+          status: response.status,
+          originalMessage:
+            typeof errorBody === "object" &&
+            errorBody !== null &&
+            "message" in (errorBody as Record<string, unknown>) &&
+            typeof (errorBody as Record<string, unknown>).message === "string"
+              ? ((errorBody as Record<string, unknown>).message as string)
+              : undefined,
+        },
+      );
+      lastError = mapped;
+
+      dispatchApiTrace({
+        traceId: attempt > 0 ? `${traceId}-retry-${attempt}` : traceId,
+        source: "ApiClient",
+        method,
+        url,
+        startTime,
+        endTime: Date.now(),
+        durationMs: Date.now() - startTime,
+        status: "error",
+        statusCode: response.status,
+        errorData: mapped,
+      });
+
+      // Only retry RETRYABLE errors (5xx, 429, network)
+      if (mapped.severity !== ErrorSeverity.RETRYABLE) {
+        return { success: false, error: mapped };
       }
     }
 
@@ -484,6 +604,31 @@ export class ApiClient {
       req,
       false,
       opts,
+    );
+  }
+
+  async updateProfile(
+    req: UpdateProfileRequest,
+  ): Promise<ApiResult<UpdateProfileResponse>> {
+    if (!req.address || req.address.trim() === "") {
+      return {
+        success: false,
+        error: makeValidationError("address is required and must be a non-empty string."),
+      };
+    }
+    if (!req.username || req.username.trim() === "") {
+      return {
+        success: false,
+        error: makeValidationError("username is required and must be a non-empty string."),
+      };
+    }
+
+    // Using /users/create as upsert-once works for this UI scenario.
+    return this._request<UpdateProfileResponse>(
+      "POST",
+      "/users/create",
+      req,
+      true,
     );
   }
 
