@@ -1,5 +1,5 @@
 /**
- * @vitest-environment happy-dom
+ * @vitest-environment happy-dom --
  */
 
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
@@ -82,7 +82,7 @@ describe("Breadcrumb Navigation", () => {
 
     // Check for intermediate segments
     expect(screen.getByText("games")).toBeInTheDocument();
-    
+
     // Check for the active leaf node
     const currentPage = screen.getByText("stellarcade classic");
     expect(currentPage).toBeInTheDocument();
@@ -91,15 +91,15 @@ describe("Breadcrumb Navigation", () => {
 
   it("omits breadcrumbs when on the root route", async () => {
     window.history.pushState({}, "Home", "/");
-    
+
     const { default: App } = await import("@/App");
     render(<App />);
 
     // Since 'pathnames' will be empty at '/', only the Home link remains.
-    // If your logic hides the whole nav when pathnames.length === 0, 
+    // If your logic hides the whole nav when pathnames.length === 0,
     // you would test for queryByRole(...) to be null.
     const breadcrumbLinks = screen.getAllByRole("listitem");
-    expect(breadcrumbLinks).toHaveLength(1); 
+    expect(breadcrumbLinks).toHaveLength(1);
     expect(screen.getByTitle("Home")).toBeInTheDocument();
   });
 });
