@@ -285,17 +285,27 @@ impl GovernanceToken {
             .get(&DataKey::Checkpoints(holder))
             .unwrap_or_else(|| Vec::new(&env));
 
-        // Walk backwards to find the latest checkpoint whose ledger <= requested.
-        let mut result: Option<Checkpoint> = None;
-        for i in 0..history.len() {
-            let cp = history.get(i).unwrap();
-            if cp.ledger <= ledger {
-                result = Some(cp);
+        // Binary search for the rightmost checkpoint with cp.ledger <= requested ledger.
+        let len = history.len();
+        if len == 0 {
+            return None;
+        }
+        let mut lo: u32 = 0;
+        let mut hi: u32 = len; // exclusive
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2;
+            if history.get(mid).unwrap().ledger <= ledger {
+                lo = mid + 1;
             } else {
-                break;
+                hi = mid;
             }
         }
-        result
+        // lo is now the first index with cp.ledger > ledger; lo-1 is our answer.
+        if lo == 0 {
+            None
+        } else {
+            Some(history.get(lo - 1).unwrap())
+        }
     }
 }
 
@@ -470,5 +480,55 @@ mod test {
         // latest_checkpoint reflects the final cumulative balance.
         let latest = client.latest_checkpoint(&user).unwrap();
         assert_eq!(latest.balance, (MAX_CHECKPOINTS as i128) + 1);
+    }
+
+    #[test]
+    fn test_checkpoint_at_ledger_exact_match() {
+        let (env, _admin, _cid, client) = setup();
+        let user = Address::generate(&env);
+
+        env.ledger().with_mut(|li| li.sequence_number = 10);
+        client.mint(&user, &100);
+        env.ledger().with_mut(|li| li.sequence_number = 20);
+        client.mint(&user, &50);
+
+        let cp = client.checkpoint_at_ledger(&user, &10).unwrap();
+        assert_eq!(cp.ledger, 10);
+        assert_eq!(cp.balance, 100);
+    }
+
+    #[test]
+    fn test_checkpoint_at_ledger_between_checkpoints() {
+        let (env, _admin, _cid, client) = setup();
+        let user = Address::generate(&env);
+
+        env.ledger().with_mut(|li| li.sequence_number = 5);
+        client.mint(&user, &200);
+        env.ledger().with_mut(|li| li.sequence_number = 15);
+        client.mint(&user, &100);
+
+        // Ledger 10 is between 5 and 15 — should return the checkpoint at 5.
+        let cp = client.checkpoint_at_ledger(&user, &10).unwrap();
+        assert_eq!(cp.ledger, 5);
+        assert_eq!(cp.balance, 200);
+    }
+
+    #[test]
+    fn test_checkpoint_at_ledger_before_all_checkpoints_returns_none() {
+        let (env, _admin, _cid, client) = setup();
+        let user = Address::generate(&env);
+
+        env.ledger().with_mut(|li| li.sequence_number = 10);
+        client.mint(&user, &100);
+
+        // Ledger 5 precedes the first checkpoint at ledger 10.
+        assert!(client.checkpoint_at_ledger(&user, &5).is_none());
+    }
+
+    #[test]
+    fn test_checkpoint_at_ledger_unknown_holder_returns_none() {
+        let (env, _admin, _cid, client) = setup();
+        let unknown = Address::generate(&env);
+        assert!(client.checkpoint_at_ledger(&unknown, &100).is_none());
     }
 }
