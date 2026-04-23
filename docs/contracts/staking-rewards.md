@@ -1,9 +1,5 @@
 # staking-rewards
 
-Epoch-based staking rewards contract. Distributes reward tokens proportionally
-to stakers based on their share of the total staked snapshot recorded at epoch
-start.
-
 ## Public Methods
 
 ### `init`
@@ -27,7 +23,7 @@ pub fn init(env: Env, admin: Address, staking_token: Address, reward_token: Addr
 `Result<(), Error>`
 
 ### `start_epoch`
-Admin starts a new reward epoch by depositing `total_rewards` tokens.
+Admin starts a new reward epoch, depositing `total_rewards` tokens.  Only one epoch may be active at a time. The current total staked amount is snapshotted for proportional reward calculations.
 
 ```rust
 pub fn start_epoch(env: Env, admin: Address, total_rewards: i128, end_timestamp: u64) -> Result<u64, Error>
@@ -44,10 +40,10 @@ pub fn start_epoch(env: Env, admin: Address, total_rewards: i128, end_timestamp:
 
 #### Return Type
 
-`Result<u64, Error>` — the new epoch id.
+`Result<u64, Error>`
 
 ### `stake`
-Stake tokens to participate in current and future reward epochs.
+Stake tokens to participate in the current and future reward epochs.
 
 ```rust
 pub fn stake(env: Env, staker: Address, amount: i128) -> Result<(), Error>
@@ -85,10 +81,7 @@ pub fn unstake(env: Env, staker: Address, amount: i128) -> Result<(), Error>
 `Result<(), Error>`
 
 ### `claim_rewards`
-Claim the staker's proportional share from the current epoch.
-
-Reward formula: `(staked_amount * total_rewards) / total_staked_snapshot`
-(integer division; any remainder remains as carry-over for the next epoch).
+Claim the staker's proportional share from the current epoch.  Epoch must be active. Staker receives `(staked_amount * total_rewards) / total_staked_snapshot` tokens (integer division; any remainder stays in the contract as carry-over for the next epoch).
 
 ```rust
 pub fn claim_rewards(env: Env, staker: Address) -> Result<i128, Error>
@@ -103,10 +96,10 @@ pub fn claim_rewards(env: Env, staker: Address) -> Result<i128, Error>
 
 #### Return Type
 
-`Result<i128, Error>` — amount claimed.
+`Result<i128, Error>`
 
 ### `end_epoch`
-Admin closes the current epoch, preventing further claims.
+Admin closes the current epoch.
 
 ```rust
 pub fn end_epoch(env: Env, admin: Address) -> Result<(), Error>
@@ -124,11 +117,7 @@ pub fn end_epoch(env: Env, admin: Address) -> Result<(), Error>
 `Result<(), Error>`
 
 ### `reward_projection`
-Return a deterministic reward projection for a staker in the current epoch.
-
-All fields are safe for frontend polling. Returns zeroed values when no epoch
-has been started yet. Rounding: integer division is used; fractional tokens
-are truncated and remain as carry-over.
+Return a deterministic reward projection for a staker.  Computes the staker's proportional share of current epoch rewards based on their current staked amount and the epoch's total staked snapshot. Returns zeroed values when no epoch has been started.  Rounding: integer division is used throughout; any fractional token is truncated and remains in the contract as carry-over.
 
 ```rust
 pub fn reward_projection(env: Env, staker: Address) -> RewardProjection
@@ -145,21 +134,8 @@ pub fn reward_projection(env: Env, staker: Address) -> RewardProjection
 
 `RewardProjection`
 
-#### `RewardProjection` Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `epoch_id` | `u64` | Epoch this projection applies to (`0` before any epoch) |
-| `staked_amount` | `i128` | Staker's current staked amount |
-| `projected_reward` | `i128` | Projected share of current epoch rewards |
-| `total_claimed` | `i128` | Rewards claimed across all previous epochs |
-| `lifetime_projected_total` | `i128` | `projected_reward + total_claimed` |
-
 ### `epoch_summary`
-Return a summary of the current epoch's accounting state.
-
-`pending_carry_over` is the portion of epoch rewards not yet claimed.
-Returns zeroed/default values when no epoch has started.
+Return a summary of the current epoch's accounting state.  `pending_carry_over` is the portion of epoch rewards not yet claimed. When no epoch has started all fields return zero or `false`.
 
 ```rust
 pub fn epoch_summary(env: Env) -> EpochSummary
@@ -175,13 +151,3 @@ pub fn epoch_summary(env: Env) -> EpochSummary
 
 `EpochSummary`
 
-#### `EpochSummary` Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `epoch_id` | `u64` | Current epoch id (`0` before any epoch) |
-| `total_rewards` | `i128` | Total reward tokens allocated to this epoch |
-| `distributed_rewards` | `i128` | Tokens already claimed in this epoch |
-| `pending_carry_over` | `i128` | `total_rewards − distributed_rewards` |
-| `total_staked_snapshot` | `i128` | Total staked at epoch start |
-| `is_active` | `bool` | Whether the epoch is still accepting claims |

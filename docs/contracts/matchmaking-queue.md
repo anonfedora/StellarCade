@@ -141,12 +141,7 @@ pub fn match_state(env: Env, match_id: u64) -> MatchRecord
 `MatchRecord`
 
 ### `queue_health_snapshot`
-Return a health snapshot for a single queue.
-
-All fields are zero-valued when the queue has never been initialised.
-`active_buckets` is 1 when players are waiting, 0 when the queue is empty.
-`matches_total` is a lightweight throughput indicator incremented by
-`create_match`.
+Return a health snapshot for a single queue.  All fields are zero-valued when the queue has never been initialised. `active_buckets` is 1 when players are waiting and 0 when the queue is empty. `matches_total` is a lightweight throughput indicator derived from the per-queue match counter updated by `create_match`.
 
 ```rust
 pub fn queue_health_snapshot(env: Env, queue_id: Symbol) -> QueueHealthSnapshot
@@ -163,28 +158,8 @@ pub fn queue_health_snapshot(env: Env, queue_id: Symbol) -> QueueHealthSnapshot
 
 `QueueHealthSnapshot`
 
-#### `QueueHealthSnapshot` Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `queue_id` | `Symbol` | Queue identifier |
-| `queue_size` | `u32` | Players currently waiting |
-| `active_buckets` | `u32` | Active criteria groups (0 or 1) |
-| `matches_total` | `u64` | Cumulative matches created from this queue |
-
 ### `wait_band_estimate`
-Return an estimated wait-time band for a queue.
-
-Outputs are intentionally coarse and conservative. When `has_history` is
-`false` the band is `Unknown` and frontends should display a conservative
-fallback message rather than a time range.
-
-| Condition | `wait_band` | `has_history` |
-|---|---|---|
-| `queue_size >= 2` | `Immediate` | any |
-| `queue_size == 1` | `Short` | any |
-| `queue_size == 0`, matches > 0 | `Long` | `true` |
-| `queue_size == 0`, matches == 0 | `Unknown` | `false` |
+Return an estimated wait-time band for a queue.  The band is derived from current queue size and prior match history. Outputs are intentionally coarse and conservative so frontends never over-promise exact matchmaking times.  | Condition                         | `wait_band`  | `has_history` | |-----------------------------------|--------------|---------------| | `queue_size >= 2`                 | `Immediate`  | any           | | `queue_size == 1`                 | `Short`      | any           | | `queue_size == 0, matches > 0`    | `Long`       | `true`        | | `queue_size == 0, matches == 0`   | `Unknown`    | `false`       |
 
 ```rust
 pub fn wait_band_estimate(env: Env, queue_id: Symbol) -> WaitBandEstimate
@@ -200,14 +175,4 @@ pub fn wait_band_estimate(env: Env, queue_id: Symbol) -> WaitBandEstimate
 #### Return Type
 
 `WaitBandEstimate`
-
-#### `WaitBandEstimate` Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `queue_id` | `Symbol` | Queue identifier |
-| `queue_size` | `u32` | Current queue depth used to derive the band |
-| `wait_band` | `WaitBand` | Coarse wait-time category |
-| `has_history` | `bool` | `false` when no matches have ever been created |
-
 

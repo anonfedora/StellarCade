@@ -1,22 +1,105 @@
-# Escrow Marketplace
+# escrow-marketplace
 
-## Overview
-`escrow-marketplace` models marketplace-style escrows with read-only accessors that summarize escrow health and release readiness in one call.
+## Public Methods
 
-## Public Interface
-- `init(admin)`
-- `create_escrow(buyer, seller, amount, expiry)`
-- `raise_dispute(caller, escrow_id)`
-- `release_escrow(caller, escrow_id)`
-- `expire_escrow(escrow_id)`
-- `escrow_status_snapshot(escrow_id)`
-- `release_readiness(escrow_id)`
+### `init`
+```rust
+pub fn init(env: Env, admin: Address)
+```
 
-## Snapshot Accessor
-- `escrow_status_snapshot` returns buyer/seller identifiers, expiry, dispute state, and a normalized `state`.
-- Missing escrows return `exists=false` and `state=Missing`.
+#### Parameters
 
-## Release Readiness
-- `release_readiness` is read-only and does not perform settlement transitions.
-- `ready=true` only when the escrow is locked, undisputed, and past expiry.
-- `blocker` identifies the first reason a release cannot proceed: `missing`, `not_expired`, `disputed`, `released`, or `expired`.
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `admin` | `Address` |
+
+### `create_escrow`
+```rust
+pub fn create_escrow(env: Env, buyer: Address, seller: Address, amount: i128, expiry: u64) -> u64
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `buyer` | `Address` |
+| `seller` | `Address` |
+| `amount` | `i128` |
+| `expiry` | `u64` |
+
+#### Return Type
+
+`u64`
+
+### `raise_dispute`
+```rust
+pub fn raise_dispute(env: Env, caller: Address, escrow_id: u64)
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `caller` | `Address` |
+| `escrow_id` | `u64` |
+
+### `release_escrow`
+```rust
+pub fn release_escrow(env: Env, caller: Address, escrow_id: u64)
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `caller` | `Address` |
+| `escrow_id` | `u64` |
+
+### `expire_escrow`
+```rust
+pub fn expire_escrow(env: Env, escrow_id: u64)
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `escrow_id` | `u64` |
+
+### `escrow_status_snapshot`
+```rust
+pub fn escrow_status_snapshot(env: Env, escrow_id: u64) -> EscrowStatusSnapshot
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `escrow_id` | `u64` |
+
+#### Return Type
+
+`EscrowStatusSnapshot`
+
+### `release_readiness`
+```rust
+pub fn release_readiness(env: Env, escrow_id: u64) -> ReleaseReadiness
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `escrow_id` | `u64` |
+
+#### Return Type
+
+`ReleaseReadiness`
+

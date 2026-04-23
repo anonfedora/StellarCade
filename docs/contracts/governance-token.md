@@ -1,5 +1,7 @@
 # governance-token
 
+A single voting-weight snapshot recorded at a given ledger sequence.
+
 ## Public Methods
 
 ### `init`
@@ -158,7 +160,7 @@ pub fn decimals(env: Env) -> u32
 `u32`
 
 ### `latest_checkpoint`
-Returns the most recent voting checkpoint for `holder`. Returns `None` when the holder has no recorded history.
+Returns the most recent checkpoint for `holder`. Returns `None` when the holder has no recorded history.
 
 ```rust
 pub fn latest_checkpoint(env: Env, holder: Address) -> Option<Checkpoint>
@@ -176,7 +178,7 @@ pub fn latest_checkpoint(env: Env, holder: Address) -> Option<Checkpoint>
 `Option<Checkpoint>`
 
 ### `checkpoint_history`
-Returns up to `limit` most-recent checkpoints for `holder`, ordered oldest-first. `limit` is capped at 50. Returns an empty vec for unknown holders.
+Returns up to `limit` most-recent checkpoints for `holder`, ordered oldest-first within the returned slice.  `limit` is capped at `MAX_CHECKPOINTS`.  Returns an empty vec for unknown holders.
 
 ```rust
 pub fn checkpoint_history(env: Env, holder: Address, limit: u32) -> Vec<Checkpoint>
@@ -195,7 +197,7 @@ pub fn checkpoint_history(env: Env, holder: Address, limit: u32) -> Vec<Checkpoi
 `Vec<Checkpoint>`
 
 ### `checkpoint_at_ledger`
-Returns the most recent checkpoint at or before `ledger` for `holder`. Intended for snapshot-based vote weighting — pass a proposal's `start_ledger` to get the holder's balance at that point in time. Returns `None` for unknown holders or if no checkpoint precedes the requested ledger.
+Returns the most recent checkpoint at or before `ledger` for `holder`. Enables snapshot-based vote weighting: callers pass a proposal's `start_ledger` to get the holder's balance at that point in time. Returns `None` for unknown holders or if no checkpoint precedes `ledger`.
 
 ```rust
 pub fn checkpoint_at_ledger(env: Env, holder: Address, ledger: u32) -> Option<Checkpoint>
@@ -212,21 +214,4 @@ pub fn checkpoint_at_ledger(env: Env, holder: Address, ledger: u32) -> Option<Ch
 #### Return Type
 
 `Option<Checkpoint>`
-
-## Checkpoint Type
-
-```rust
-pub struct Checkpoint {
-    pub ledger: u32,   // Ledger sequence at which the snapshot was taken
-    pub balance: i128, // Holder balance at that ledger
-}
-```
-
-## Checkpoint Ordering & Retention
-
-- A `Checkpoint { ledger, balance }` is written for the affected holder(s) on every `mint`, `burn`, and `transfer` operation.
-- Checkpoints are stored per holder in ascending ledger-sequence order (oldest → newest).
-- Multiple balance changes within the same ledger overwrite the single entry for that ledger rather than creating duplicates.
-- A maximum of 50 checkpoints are retained per holder; the oldest entry is evicted when the cap is reached.
-- Unknown holders return `None` from `latest_checkpoint` and an empty list from `checkpoint_history` — never an ambiguous zero state.
 
