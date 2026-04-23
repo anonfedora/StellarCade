@@ -2,72 +2,74 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AccountSwitcher } from '@/components/v1/AccountSwitcher';
 
+vi.mock('@/services/account-memory-service', () => ({
+  getRecentAccounts: vi.fn(() => []),
+  recordAccountUsage: vi.fn(),
+  removeAccount: vi.fn(),
+  clearRecentAccounts: vi.fn(),
+}));
+
+import * as accountMemory from '@/services/account-memory-service';
+
+const ADDR_A = '0x1234567890abcdef';
+const ADDR_B = '0xAAAABBBBCCCCDDDD';
+
 describe('AccountSwitcher', () => {
   beforeEach(() => {
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+    vi.mocked(accountMemory.getRecentAccounts).mockReturnValue([]);
+    vi.mocked(accountMemory.recordAccountUsage).mockReset();
+    vi.mocked(accountMemory.removeAccount).mockReset();
   });
 
-  it('shows "No wallet connected" when currentAddress is null', () => {
-    render(<AccountSwitcher currentAddress={null} onSwitch={vi.fn()} />);
-    expect(screen.getByText('No wallet connected')).toBeTruthy();
+  it('shows "Connect wallet" when currentAddress is null', () => {
+    render(<AccountSwitcher currentAddress={null} />);
+    expect(screen.getByText('Connect wallet')).toBeTruthy();
   });
 
   it('truncates long addresses in the trigger', () => {
     const longAddress = '0xABCDEF1234567890ABCDEF';
-    render(<AccountSwitcher currentAddress={longAddress} onSwitch={vi.fn()} />);
+    render(<AccountSwitcher currentAddress={longAddress} />);
     const trigger = screen.getByTestId('account-switcher-trigger');
-    // Should show truncated form: first 6 chars + … + last 4 chars
     expect(trigger.textContent).toContain('0xABCD');
     expect(trigger.textContent).toContain('CDEF');
     expect(trigger.textContent).not.toBe(longAddress);
   });
 
   it('opens menu on trigger click', () => {
-    render(
-      <AccountSwitcher currentAddress="0x1234567890abcdef" onSwitch={vi.fn()} />
-    );
+    render(<AccountSwitcher currentAddress={ADDR_A} />);
     expect(screen.queryByTestId('account-switcher-menu')).toBeNull();
     fireEvent.click(screen.getByTestId('account-switcher-trigger'));
     expect(screen.getByTestId('account-switcher-menu')).toBeTruthy();
   });
 
-  it('shows "No recent accounts" when no other accounts exist', () => {
-    render(
-      <AccountSwitcher currentAddress="0x1234567890abcdef" onSwitch={vi.fn()} />
-    );
+  it('shows "No recent accounts" when disconnected with no history', () => {
+    render(<AccountSwitcher />);
     fireEvent.click(screen.getByTestId('account-switcher-trigger'));
     expect(screen.getByTestId('account-switcher-empty')).toBeTruthy();
-    expect(screen.getByText('No recent accounts.')).toBeTruthy();
+    expect(screen.getByText('No recent accounts')).toBeTruthy();
   });
 
-  it('clicking a recent account calls onSwitch with full address and closes menu', () => {
-    const recentAddr = '0xAAAABBBBCCCCDDDD';
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(
-      JSON.stringify([recentAddr, '0x1234567890abcdef'])
-    );
+  it('clicking a recent account calls onSelectAccount and closes menu', () => {
+    vi.mocked(accountMemory.getRecentAccounts).mockReturnValue([
+      { address: ADDR_B, lastUsedAt: Date.now() - 1000 },
+    ]);
 
-    const onSwitch = vi.fn();
-    render(
-      <AccountSwitcher currentAddress="0x1234567890abcdef" onSwitch={onSwitch} />
-    );
+    const onSelectAccount = vi.fn();
+    render(<AccountSwitcher currentAddress={ADDR_A} onSelectAccount={onSelectAccount} />);
     fireEvent.click(screen.getByTestId('account-switcher-trigger'));
 
-    const itemBtn = screen.getByTestId(`account-switcher-item-${recentAddr}`);
-    fireEvent.click(itemBtn);
+    fireEvent.click(screen.getByTestId(`account-switcher-recent-${ADDR_B}`));
 
-    expect(onSwitch).toHaveBeenCalledWith(recentAddr);
+    expect(onSelectAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ address: ADDR_B }),
+    );
     expect(screen.queryByTestId('account-switcher-menu')).toBeNull();
   });
 
   it('closes menu on outside click', () => {
-    render(
-      <AccountSwitcher currentAddress="0x1234567890abcdef" onSwitch={vi.fn()} />
-    );
+    render(<AccountSwitcher currentAddress={ADDR_A} />);
     fireEvent.click(screen.getByTestId('account-switcher-trigger'));
     expect(screen.getByTestId('account-switcher-menu')).toBeTruthy();
-
-    // Simulate mousedown outside the component
     fireEvent.mouseDown(document.body);
     expect(screen.queryByTestId('account-switcher-menu')).toBeNull();
   });
