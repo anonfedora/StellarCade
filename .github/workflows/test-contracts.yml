@@ -29,15 +29,15 @@ jobs:
 
       - name: Build Contracts
         run: |
-          cd contracts/shared && cargo build --locked --release
-          cd ../prize-pool && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../random-generator && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../coin-flip && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../multiplayer-room && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../pattern-puzzle && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../emergency-pause && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../governance && cargo build --locked --target wasm32-unknown-unknown --release
-          cd ../contract-role-registry && cargo build --locked --target wasm32-unknown-unknown --release
+          cd contracts/shared && cargo build --release
+          cd ../prize-pool && cargo build --target wasm32v1-none --release
+          cd ../random-generator && cargo build --target wasm32v1-none --release
+          cd ../coin-flip && cargo build --target wasm32v1-none --release
+          cd ../multiplayer-room && cargo build --target wasm32v1-none --release
+          cd ../pattern-puzzle && cargo build --target wasm32v1-none --release
+          cd ../emergency-pause && cargo build --target wasm32v1-none --release
+          cd ../governance && cargo build --target wasm32v1-none --release
+          cd ../contract-role-registry && cargo build --target wasm32v1-none --release
 
       - name: Run Tests
         run: |

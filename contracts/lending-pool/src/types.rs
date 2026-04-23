@@ -1,19 +1,26 @@
-#![no_std]
-
-use soroban_sdk::{contracttype, Address, Env, Vec};
-
-// Types for lending-pool contract
+use soroban_sdk::contracttype;
 
 #[contracttype]
-pub struct UtilizationSnapshot {
-    pub total_borrowed: i128,
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PoolTotals {
     pub total_supplied: i128,
-    pub utilization_rate: u32, // in basis points
+    pub total_borrowed: i128,
 }
 
 #[contracttype]
-pub struct LiquidationBuffer {
-    pub user: Address,
-    pub buffer_amount: i128,
-    pub is_safe: bool,
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UtilizationSnapshot {
+    pub configured: bool,
+    pub total_supplied: i128,
+    pub total_borrowed: i128,
+    pub available_liquidity: i128,
+    pub utilization_bps: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LiquidationBufferSnapshot {
+    pub configured: bool,
+    pub liquidation_buffer_bps: u32,
+    pub has_borrow_exposure: bool,
 }

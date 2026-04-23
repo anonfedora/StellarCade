@@ -4,6 +4,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RecentAccount } from '@/components/v1/AccountSwitcher.types';
 
 // ── Mock account-memory-service ──────────────────────────────────────────────
 

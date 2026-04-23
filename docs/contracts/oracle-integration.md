@@ -1,16 +1,6 @@
 # oracle-integration
 
-Oracle consumers need a stable read surface for source configuration and update
-policy details, not just latest-value freshness. The two accessor methods below
-(`source_config_snapshot` and `update_policy_summary`) provide exactly that.
-
-## Missing-source behavior
-
-- `source_config_snapshot` returns `None` when the contract has not been
-  initialized. Callers should treat a `None` result as "no sources configured"
-  and must not attempt data requests until a non-`None` snapshot is available.
-- `update_policy_summary` is always safe to call — it returns a compile-time
-  constant summary regardless of initialization state.
+Snapshot of the configured oracle source addresses at read time. Returns `None` from `source_config_snapshot` when the contract has not been initialized.
 
 ## Public Methods
 
@@ -100,6 +90,40 @@ pub fn get_request(env: Env, request_id: BytesN<32>) -> Option<OracleRequest>
 
 `Option<OracleRequest>`
 
+### `source_config_snapshot`
+Returns a snapshot of the configured oracle source addresses.  Returns `None` when the contract has not been initialized; callers should treat a `None` result as "no sources configured" and not attempt data requests until the contract is initialized.
+
+```rust
+pub fn source_config_snapshot(env: Env) -> Option<OracleSourceSnapshot>
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+
+#### Return Type
+
+`Option<OracleSourceSnapshot>`
+
+### `update_policy_summary`
+Returns a deterministic summary of the staleness and update policy.  The summary is safe to cache by clients: it does not change after initialization and does not require any feed-specific parameters. The `cadence` field is `"on_request"` — data is pulled per-request rather than pushed on a fixed schedule.
+
+```rust
+pub fn update_policy_summary(env: Env) -> UpdatePolicySummary
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+
+#### Return Type
+
+`UpdatePolicySummary`
+
 ### `last_price_freshness`
 ```rust
 pub fn last_price_freshness(env: Env, feed_id: BytesN<32>) -> PriceFreshness
@@ -116,39 +140,3 @@ pub fn last_price_freshness(env: Env, feed_id: BytesN<32>) -> PriceFreshness
 
 `PriceFreshness`
 
-
-### `source_config_snapshot`
-Returns a snapshot of the configured oracle source addresses.
-Returns `None` when the contract has not been initialized (see **Missing-source behavior** above).
-The snapshot is safe to expose in client tooling — it contains only whitelisted
-`Address` values and a convenience count field.
-
-```rust
-pub fn source_config_snapshot(env: Env) -> Option<OracleSourceSnapshot>
-```
-
-#### Return Type
-
-`Option<OracleSourceSnapshot>`
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `sources` | `Vec<Address>` | Whitelisted oracle addresses |
-| `source_count` | `u32` | Number of configured sources |
-
-### `update_policy_summary`
-Returns a deterministic summary of the staleness and update cadence policy.
-The result is identical on every call and safe to cache by clients.
-
-```rust
-pub fn update_policy_summary(env: Env) -> UpdatePolicySummary
-```
-
-#### Return Type
-
-`UpdatePolicySummary`
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `stale_threshold_ledgers` | `u32` | Ledgers after which a price is stale |
-| `cadence` | `Symbol` | `"on_request"` — data is fetched per-request |

@@ -1,21 +1,80 @@
-# Identity Registry
+# identity-registry
 
-## Overview
-`identity-registry` stores a public player profile and exposes two read-only accessors for frontend completion and verification UX.
+## Public Methods
 
-## Public Interface
-- `init(admin)`
-- `register_identity(identity, display_name, country_code, bio, avatar_uri)`
-- `set_verification_state(identity, email_verified, phone_verified, government_id_verified, wallet_linked)`
-- `profile_completeness(identity)`
-- `verification_summary(identity)`
+### `init`
+```rust
+pub fn init(env: Env, admin: Address)
+```
 
-## Accessor Notes
-- `profile_completeness` returns named fields instead of tuples.
-- The completeness score uses four profile fields: `display_name`, `country_code`, `bio`, and `avatar_uri`.
-- Each populated field contributes `2500` basis points to `score_bps`.
-- Unknown identities return an explicit empty-state payload with `exists=false`.
+#### Parameters
 
-## Verification Summary
-- Reports completed dimensions for email, phone, government ID, and wallet link.
-- Includes a `pending_requirements` list for direct frontend badge and CTA rendering.
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `admin` | `Address` |
+
+### `register_identity`
+```rust
+pub fn register_identity(env: Env, identity: Address, display_name: Option<String>, country_code: Option<String>, bio: Option<String>, avatar_uri: Option<String>)
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `identity` | `Address` |
+| `display_name` | `Option<String>` |
+| `country_code` | `Option<String>` |
+| `bio` | `Option<String>` |
+| `avatar_uri` | `Option<String>` |
+
+### `set_verification_state`
+```rust
+pub fn set_verification_state(env: Env, identity: Address, email_verified: bool, phone_verified: bool, government_id_verified: bool, wallet_linked: bool)
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `identity` | `Address` |
+| `email_verified` | `bool` |
+| `phone_verified` | `bool` |
+| `government_id_verified` | `bool` |
+| `wallet_linked` | `bool` |
+
+### `profile_completeness`
+```rust
+pub fn profile_completeness(env: Env, identity: Address) -> ProfileCompleteness
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `identity` | `Address` |
+
+#### Return Type
+
+`ProfileCompleteness`
+
+### `verification_summary`
+```rust
+pub fn verification_summary(env: Env, identity: Address) -> VerificationSummary
+```
+
+#### Parameters
+
+| Name | Type |
+|------|------|
+| `env` | `Env` |
+| `identity` | `Address` |
+
+#### Return Type
+
+`VerificationSummary`
+

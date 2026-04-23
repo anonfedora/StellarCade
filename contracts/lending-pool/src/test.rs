@@ -1,36 +1,44 @@
-#![cfg(test)]
-
 use super::*;
-use soroban_sdk::testutils::{Address as _, Env as _};
-use soroban_sdk::{Address, Env};
+use soroban_sdk::{testutils::Address as _, Address, Env};
 
-#[test]
-fn test_get_utilization_snapshot() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, LendingPoolContract);
-    let client = LendingPoolContractClient::new(&env, &contract_id);
-
-    let admin = Address::generate(&env);
-    client.initialize(&admin);
-
-    client.update_totals(&1000, &2000);
-
-    let snapshot = client.get_utilization_snapshot();
-    assert_eq!(snapshot.total_borrowed, 1000);
-    assert_eq!(snapshot.total_supplied, 2000);
-    assert_eq!(snapshot.utilization_rate, 5000); // 50%
+fn setup_client(env: &Env) -> (LendingPoolClient<'_>, Address) {
+    let admin = Address::generate(env);
+    let contract_id = env.register_contract(None, LendingPool);
+    let client = LendingPoolClient::new(env, &contract_id);
+    client.init(&admin, &900);
+    (client, admin)
 }
 
 #[test]
-fn test_get_liquidation_buffer_missing() {
+fn test_utilization_and_buffer_happy_path() {
     let env = Env::default();
-    let contract_id = env.register_contract(None, LendingPoolContract);
-    let client = LendingPoolContractClient::new(&env, &contract_id);
+    env.mock_all_auths();
+    let (client, admin) = setup_client(&env);
 
-    let admin = Address::generate(&env);
-    client.initialize(&admin);
+    client.set_pool_totals(&admin, &1_000, &250);
+    let utilization = client.utilization_snapshot();
+    assert!(utilization.configured);
+    assert_eq!(utilization.available_liquidity, 750);
+    assert_eq!(utilization.utilization_bps, 2_500);
 
-    let user = Address::generate(&env);
-    let buffer = client.get_liquidation_buffer(&user);
-    assert!(buffer.is_none());
+    let buffer = client.liquidation_buffer_snapshot();
+    assert_eq!(buffer.liquidation_buffer_bps, 900);
+    assert!(buffer.has_borrow_exposure);
+}
+
+#[test]
+fn test_unconfigured_returns_predictable_zero_snapshot() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, LendingPool);
+    let client = LendingPoolClient::new(&env, &contract_id);
+
+    let utilization = client.utilization_snapshot();
+    assert!(!utilization.configured);
+    assert_eq!(utilization.total_supplied, 0);
+    assert_eq!(utilization.utilization_bps, 0);
+
+    let buffer = client.liquidation_buffer_snapshot();
+    assert!(!buffer.configured);
+    assert_eq!(buffer.liquidation_buffer_bps, 0);
+    assert!(!buffer.has_borrow_exposure);
 }

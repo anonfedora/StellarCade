@@ -16,7 +16,7 @@ describe('FilterPresetBar', () => {
   it('shows empty state when no presets exist', () => {
     render(
       <FilterPresetBar
-        scope="test"
+        scope="test-delete"
         currentFilters={{}}
         onApply={vi.fn()}
       />
@@ -80,19 +80,25 @@ describe('FilterPresetBar', () => {
   });
 
   it('deleting a preset removes it from the list', () => {
-    render(
+    const { container } = render(
       <FilterPresetBar
-        scope="test"
+        scope="test-delete"
         currentFilters={{}}
         onApply={vi.fn()}
       />
     );
-    const input = screen.getByTestId('filter-preset-bar-name-input');
+    const scoped = within(container);
+    const root = scoped.getByTestId('filter-preset-bar');
+    const input = scoped.getByTestId('filter-preset-bar-name-input');
     fireEvent.change(input, { target: { value: 'To Delete' } });
-    fireEvent.click(screen.getByTestId('filter-preset-bar-save-btn'));
+    fireEvent.click(scoped.getByTestId('filter-preset-bar-save-btn'));
 
-    expect(screen.getByText('To Delete')).toBeTruthy();
+    expect(scoped.getByText('To Delete')).toBeTruthy();
 
+    fireEvent.click(scoped.getByLabelText('Delete preset To Delete'));
+
+    expect(scoped.queryByText('To Delete')).toBeNull();
+    expect(within(root).getByTestId('filter-preset-bar-empty')).toBeTruthy();
     const row = screen.getByText('To Delete').closest('li');
     expect(row).toBeTruthy();
     const deleteBtn = within(row as HTMLElement).getByRole('button', {
