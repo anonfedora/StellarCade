@@ -26,7 +26,6 @@ export interface DraftRecoveryPromptProps {
 }
 
 export const DraftRecoveryPrompt: React.FC<DraftRecoveryPromptProps> = ({
-  formId,
   formName,
   onRecover,
   onDiscard,

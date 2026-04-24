@@ -51,7 +51,6 @@ export function useDraftRecovery(
 
     // Initialize draft recovery service with options
     useEffect(() => {
-        const service = draftRecoveryService;
         // Note: Service is singleton, maxDraftAge would need to be set at initialization
         // For now, we rely on the default 24-hour expiry
     }, [maxDraftAge]);

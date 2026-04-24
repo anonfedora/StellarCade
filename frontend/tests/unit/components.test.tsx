@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import DraftRecoveryPrompt from "../../src/components/v1/DraftRecoveryPrompt";
 import RecentItemsRail from "../../src/components/v1/RecentItemsRail";
 import PropertyList from "../../src/components/v1/PropertyList";
