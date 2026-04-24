@@ -28,7 +28,6 @@ export const Callout: React.FC<CalloutProps> = ({
       className={`${baseClass} ${baseClass}--${variant} ${className}`.trim()}
       data-testid={testId}
       role={roleAttr}
-      aria-live="polite"
     >
       {icon && <div className={`${baseClass}__icon`}>{icon}</div>}
       <div className={`${baseClass}__content`}>

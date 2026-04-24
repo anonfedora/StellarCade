@@ -23,7 +23,7 @@ export const ResumeTaskBanner: React.FC<ResumeTaskBannerProps> = ({
       className={`${baseClass} ${className}`.trim()}
       data-testid={testId}
       role="region"
-      aria-live="polite"
+      aria-label="Resume Task"
     >
       <div className={`${baseClass}__content`}>
         <span className={`${baseClass}__text`}>
