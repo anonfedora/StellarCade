@@ -6,6 +6,8 @@
 
 import React, { useState } from 'react';
 import { AnalyticsRangeSwitcher, type TimeRange } from '../components/v1/AnalyticsRangeSwitcher';
+import { CampaignRewardsSpotlightCard } from '../components/v1/CampaignRewardsSpotlightCard';
+import { DashboardEmptyPanelShell } from '../components/v1/DashboardEmptyPanelShell';
 import { StatusPill } from '../components/v1/StatusPill';
 
 interface ChartData {
@@ -75,6 +77,18 @@ const AnalyticsDashboard: React.FC = () => {
   };
 
   const chartData = getChartData(selectedRange);
+  const sparseModules = [
+    {
+      id: 'campaign-latency',
+      title: 'Campaign latency monitor',
+      description: 'No campaign latency snapshots are available yet for this range.',
+    },
+    {
+      id: 'reward-anomalies',
+      title: 'Reward anomaly tracker',
+      description: 'Reward outlier tracking is waiting for enough payout samples.',
+    },
+  ];
 
   const formatValue = (value: number, label: string): string => {
     if (label.includes('Revenue')) {
@@ -100,6 +114,14 @@ const AnalyticsDashboard: React.FC = () => {
           Monitor platform performance and user engagement metrics
         </p>
       </header>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <CampaignRewardsSpotlightCard
+          activeCampaigns={3}
+          pendingRewardsLabel="12 claims"
+          onViewCampaigns={() => setSelectedRange('30d')}
+          onClaimRewards={() => setSelectedRange('7d')}
+        />
+      </div>
 
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ 
@@ -205,6 +227,27 @@ const AnalyticsDashboard: React.FC = () => {
           ))}
         </div>
       </div>
+      <section style={{ marginTop: '2rem' }} aria-label="Sparse dashboard modules">
+        <h2 style={{ marginBottom: '0.75rem' }}>Sparse Modules</h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '1rem',
+          }}
+        >
+          {sparseModules.map((module) => (
+            <DashboardEmptyPanelShell
+              key={module.id}
+              title={module.title}
+              description={module.description}
+              actionLabel="Backfill module"
+              onAction={() => setSelectedRange('90d')}
+              testId={`sparse-module-${module.id}`}
+            />
+          ))}
+        </div>
+      </section>
 
       <div style={{ 
         marginTop: '3rem',

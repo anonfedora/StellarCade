@@ -1,5 +1,7 @@
 import React from "react";
 import { EmptyStateBlock } from "../components/v1/EmptyStateBlock";
+import { CampaignRewardsSpotlightCard } from "../components/v1/CampaignRewardsSpotlightCard";
+import { PinnedWalletActionTray } from "../components/v1/PinnedWalletActionTray";
 import {
   PageSkeletonOrchestrator,
   SkeletonBase,
@@ -40,6 +42,7 @@ export interface PortfolioState {
 
 export interface PortfolioProps {
   state?: PortfolioState;
+  activeCampaignsCount?: number;
   onOpenWallet?: () => void;
   onBrowseRewards?: () => void;
   onBrowseCollectibles?: () => void;
@@ -122,6 +125,7 @@ function SectionError({
 
 export const Portfolio: React.FC<PortfolioProps> = ({
   state = DEFAULT_PORTFOLIO_STATE,
+  activeCampaignsCount = 0,
   onOpenWallet,
   onBrowseRewards,
   onBrowseCollectibles,
@@ -247,6 +251,12 @@ export const Portfolio: React.FC<PortfolioProps> = ({
         </div>
         <StatusPill tone="neutral" label="Portfolio beta" />
       </header>
+      <CampaignRewardsSpotlightCard
+        activeCampaigns={activeCampaignsCount}
+        pendingRewardsLabel={`${state.rewards.items.length}`}
+        onViewCampaigns={onBrowseRewards}
+        onClaimRewards={onOpenWallet}
+      />
 
       <div className="portfolio-page__grid">
         <PageSkeletonOrchestrator
@@ -342,6 +352,25 @@ export const Portfolio: React.FC<PortfolioProps> = ({
           ]}
         />
       </div>
+      <PinnedWalletActionTray
+        actions={[
+          {
+            id: "wallet",
+            label: "Open wallet",
+            onClick: onOpenWallet ?? (() => {}),
+          },
+          {
+            id: "rewards",
+            label: "Browse rewards",
+            onClick: onBrowseRewards ?? (() => {}),
+          },
+          {
+            id: "collectibles",
+            label: "Browse collectibles",
+            onClick: onBrowseCollectibles ?? (() => {}),
+          },
+        ]}
+      />
     </div>
   );
 };

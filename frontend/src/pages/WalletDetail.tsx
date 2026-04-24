@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { QuickPivotLinks, type PivotLink } from '../components/v1/QuickPivotLinks';
+import { PinnedWalletActionTray } from '../components/v1/PinnedWalletActionTray';
 import { StatusPill } from '../components/v1/StatusPill';
 
 interface WalletDetailProps {
@@ -144,6 +145,27 @@ const WalletDetail: React.FC<WalletDetailProps> = ({ walletId = 'wallet_123' }) 
       </div>
 
       {renderContent()}
+      <div style={{ marginTop: '1.5rem' }}>
+        <PinnedWalletActionTray
+          actions={[
+            {
+              id: 'refresh-session',
+              label: 'Refresh session',
+              onClick: () => console.log('refresh wallet session'),
+            },
+            {
+              id: 'repeat-last-transfer',
+              label: 'Repeat last transfer',
+              onClick: () => console.log('repeat last transfer'),
+            },
+            {
+              id: 'reconnect-wallet',
+              label: 'Reconnect wallet',
+              onClick: () => console.log('reconnect wallet'),
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 };

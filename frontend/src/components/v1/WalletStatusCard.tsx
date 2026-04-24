@@ -203,6 +203,8 @@ interface DroppedSessionBannerProps {
   onReconnect?: () => void | Promise<void>;
   pending?: boolean;
   label?: string;
+  progress?: number;
+  progressLabel?: string;
 }
 
 /**
@@ -214,11 +216,14 @@ function DroppedSessionBanner({
   onReconnect,
   pending = false,
   label = "Reconnect",
+  progress = 0,
+  progressLabel = "Recovering wallet session",
 }: DroppedSessionBannerProps): React.JSX.Element {
   const handleReconnect = useCallback(
     () => safeCall(onReconnect, "onReconnect"),
     [onReconnect],
   );
+  const safeProgress = Math.max(0, Math.min(100, Math.round(progress)));
 
   return (
     <div
@@ -240,6 +245,26 @@ function DroppedSessionBanner({
       >
         {pending ? "Reconnecting..." : label}
       </button>
+      {pending && (
+        <div
+          className="wallet-status-card__reconnect-progress"
+          data-testid="wallet-reconnect-progress"
+        >
+          <div className="wallet-status-card__reconnect-progress-row">
+            <span>{progressLabel}</span>
+            <strong>{safeProgress}%</strong>
+          </div>
+          <div
+            className="wallet-status-card__reconnect-progress-track"
+            aria-hidden="true"
+          >
+            <div
+              className="wallet-status-card__reconnect-progress-bar"
+              style={{ width: `${safeProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -495,6 +520,8 @@ export const WalletStatusCard: React.FC<WalletStatusCardProps> = ({
   onReconnect,
   reconnectPending = false,
   reconnectLabel,
+  reconnectProgress = 0,
+  reconnectProgressLabel,
   lastUpdatedAt = null,
   isRefreshing = false,
   diagnostics,
@@ -671,6 +698,8 @@ export const WalletStatusCard: React.FC<WalletStatusCardProps> = ({
           onReconnect={onReconnect}
           pending={reconnectPending}
           label={reconnectLabel}
+          progress={reconnectProgress}
+          progressLabel={reconnectProgressLabel}
         />
       )}
 

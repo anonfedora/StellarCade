@@ -227,6 +227,17 @@ export interface WalletStatusCardProps extends WalletStatusCardCallbacks {
   reconnectLabel?: string;
 
   /**
+   * Optional progress value for wallet reconnect recovery flows.
+   * Expected range: 0..100. Values outside range are clamped by the component.
+   */
+  reconnectProgress?: number;
+
+  /**
+   * Optional inline progress text for reconnect recovery (e.g. "Re-authorizing session").
+   */
+  reconnectProgressLabel?: string;
+
+  /**
    * Timestamp (ms since epoch) of the last successful balance/session refresh.
    * When provided, a human-readable "Updated X ago" label is shown.
    */
