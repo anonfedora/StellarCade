@@ -73,6 +73,26 @@ pub struct NextBonusPreview {
     pub claimable_now: bool,
 }
 
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExpiryPressure {
+    pub status: StreakSummaryStatus,
+    pub active_streak: u32,
+    pub expiry_time: u64,
+    pub seconds_until_expiry: u64,
+    pub pressure_level: ExpiryPressureLevel,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ExpiryPressureLevel {
+    None = 0,
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    Critical = 4,
+}
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -271,6 +291,63 @@ impl StreakBonus {
             projected_reward: (preview_threshold as i128).saturating_mul(rules.reward_per_streak),
             claimable_now: summary.active_streak >= rules.min_streak_to_claim
                 && summary.active_streak > summary.last_claimed_streak,
+        }
+    }
+
+    /// Return expiry pressure information for a player's streak at `as_of_ts`.
+    ///
+    /// Shows how close the streak is to expiring, with pressure levels indicating urgency.
+    pub fn expiry_pressure(env: Env, user: Address, as_of_ts: u64) -> ExpiryPressure {
+        let Some(rules) = read_rules(&env) else {
+            return ExpiryPressure {
+                status: StreakSummaryStatus::Missing,
+                active_streak: 0,
+                expiry_time: 0,
+                seconds_until_expiry: 0,
+                pressure_level: ExpiryPressureLevel::None,
+            };
+        };
+
+        let summary = build_streak_summary(&env, &user, &rules, as_of_ts);
+
+        let (expiry_time, seconds_until_expiry) = if summary.status == StreakSummaryStatus::Active {
+            let expiry = summary.streak_window_ends_at;
+            let remaining = if as_of_ts < expiry {
+                expiry.saturating_sub(as_of_ts)
+            } else {
+                0
+            };
+            (expiry, remaining)
+        } else {
+            (0, 0)
+        };
+
+        let pressure_level = match summary.status {
+            StreakSummaryStatus::Missing => ExpiryPressureLevel::None,
+            StreakSummaryStatus::Reset => ExpiryPressureLevel::None,
+            StreakSummaryStatus::Active => {
+                let window_secs = rules.streak_window_secs;
+                let remaining_pct = if window_secs > 0 {
+                    (seconds_until_expiry * 100) / window_secs
+                } else {
+                    0
+                };
+                match remaining_pct {
+                    0..=10 => ExpiryPressureLevel::Critical,
+                    11..=25 => ExpiryPressureLevel::High,
+                    26..=50 => ExpiryPressureLevel::Medium,
+                    51..=75 => ExpiryPressureLevel::Low,
+                    _ => ExpiryPressureLevel::None,
+                }
+            }
+        };
+
+        ExpiryPressure {
+            status: summary.status,
+            active_streak: summary.active_streak,
+            expiry_time,
+            seconds_until_expiry,
+            pressure_level,
         }
     }
 

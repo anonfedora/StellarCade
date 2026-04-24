@@ -29,3 +29,24 @@ pub struct PromotionCutoff {
     /// Next scheduled promotion time.
     pub next_promotion_time: u32,
 }
+
+/// Bracket data structure.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BracketData {
+    pub player_count: u32,
+    pub active_games: u32,
+    pub promotion_threshold: u32,
+    pub cutoff_score: u32,
+    pub cutoff_rank: u32,
+    pub next_promotion_time: u32,
+}
+
+/// Bracket health data.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BracketHealthData {
+    pub player_count: u32,
+    pub active_games: u32,
+    pub promotion_threshold: u32,
+}
