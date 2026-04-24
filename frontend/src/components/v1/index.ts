@@ -229,3 +229,40 @@ export type {
   QueueHealthWidgetProps,
   QueueMetrics,
 } from "./QueueHealthWidget";
+
+// Issues #621–#624
+export {
+  ReorderableList,
+  default as ReorderableListDefault,
+} from "./ReorderableList";
+export type {
+  ReorderableListProps,
+  ReorderableListItem,
+} from "./ReorderableList";
+
+export { MetricCard, default as MetricCardDefault } from "./MetricCard";
+export type {
+  MetricCardProps,
+  MetricCardStatus,
+  MetricTrend,
+} from "./MetricCard";
+
+export {
+  EventDigestPanel,
+  default as EventDigestPanelDefault,
+} from "./EventDigestPanel";
+export type {
+  EventDigestPanelProps,
+  DigestEvent,
+  DigestEventSeverity,
+} from "./EventDigestPanel";
+
+export {
+  ReviewSubmitSheet,
+  default as ReviewSubmitSheetDefault,
+} from "./ReviewSubmitSheet";
+export type {
+  ReviewSubmitSheetProps,
+  ReviewField,
+  RiskLevel,
+} from "./ReviewSubmitSheet";
