@@ -702,6 +702,22 @@ describe("WalletStatusCard", () => {
     });
   });
 
+  describe("Reconnect progress banner", () => {
+    it("renders reconnect-progress banner details while reconnect is pending", () => {
+      renderCard({
+        status: "RECONNECTING",
+        droppedSession: true,
+        reconnectPending: true,
+        reconnectProgress: 42,
+        reconnectProgressLabel: "Re-authorizing wallet session",
+      });
+
+      expect(screen.getByTestId("wallet-reconnect-progress")).toBeInTheDocument();
+      expect(screen.getByText("Re-authorizing wallet session")).toBeInTheDocument();
+      expect(screen.getByText("42%")).toBeInTheDocument();
+    });
+  });
+
   // ── Snapshots ─────────────────────────────────────────────────────────────────
   describe("Snapshots", () => {
     it("matches snapshot for connected state", () => {

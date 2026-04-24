@@ -190,6 +190,29 @@ export type {
 } from "./AnalyticsRangeSwitcher";
 
 export {
+  DashboardEmptyPanelShell,
+  default as DashboardEmptyPanelShellDefault,
+} from "./DashboardEmptyPanelShell";
+export type { DashboardEmptyPanelShellProps } from "./DashboardEmptyPanelShell";
+
+export {
+  CampaignRewardsSpotlightCard,
+  default as CampaignRewardsSpotlightCardDefault,
+} from "./CampaignRewardsSpotlightCard";
+export type {
+  CampaignRewardsSpotlightCardProps,
+} from "./CampaignRewardsSpotlightCard";
+
+export {
+  PinnedWalletActionTray,
+  default as PinnedWalletActionTrayDefault,
+} from "./PinnedWalletActionTray";
+export type {
+  PinnedWalletActionTrayProps,
+  WalletActionItem,
+} from "./PinnedWalletActionTray";
+
+export {
   AuditSnapshotCard,
   default as AuditSnapshotCardDefault,
 } from "./AuditSnapshotCard";

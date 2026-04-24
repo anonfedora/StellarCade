@@ -149,4 +149,18 @@ describe("Portfolio page", () => {
     expect(onBrowseRewards).toHaveBeenCalledTimes(1);
     expect(onBrowseCollectibles).toHaveBeenCalledTimes(1);
   });
+
+  it("renders spotlight card and pinned wallet action tray", () => {
+    render(
+      <Portfolio
+        activeCampaignsCount={3}
+        onOpenWallet={vi.fn()}
+        onBrowseRewards={vi.fn()}
+        onBrowseCollectibles={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("campaign-rewards-spotlight")).toBeInTheDocument();
+    expect(screen.getByTestId("pinned-wallet-action-tray")).toBeInTheDocument();
+  });
 });
