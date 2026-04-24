@@ -106,6 +106,32 @@ pub struct FeeState {
     pub total_withdrawn: i128,
 }
 
+#[contracttype]
+#[derive(Clone)]
+pub struct RouteAllocationSnapshot {
+    pub game_id: Symbol,
+    pub exists: bool,
+    pub total_allocated: i128,
+    pub routes: Vec<RouteAllocation>,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct RouteAllocation {
+    pub recipient: Address,
+    pub percentage: u32,
+    pub amount: i128,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub struct FallbackPolicy {
+    pub game_id: Symbol,
+    pub exists: bool,
+    pub fallback_recipient: Address,
+    pub fallback_percentage: u32,
+}
+
 #[contract]
 pub struct FeeManagerContract;
 
@@ -487,6 +513,54 @@ impl FeeManagerContract {
         ContractUnpaused { admin }.publish(&env);
 
         Ok(())
+    }
+
+    /// Get route allocation snapshot for a game
+    pub fn route_allocation_snapshot(env: Env, game_id: Symbol) -> RouteAllocationSnapshot {
+        match env.storage().instance().get(&DataKey::FeeConfig(game_id.clone())) {
+            Some(config) => {
+                let accrued = env
+                    .storage()
+                    .instance()
+                    .get(&DataKey::AccruedFees(game_id.clone()))
+                    .unwrap_or(0i128);
+
+                RouteAllocationSnapshot {
+                    game_id,
+                    exists: true,
+                    total_allocated: accrued,
+                    routes: vec![&env, RouteAllocation {
+                        recipient: config.recipient,
+                        percentage: 10000, // 100% in basis points
+                        amount: accrued,
+                    }],
+                }
+            }
+            None => RouteAllocationSnapshot {
+                game_id,
+                exists: false,
+                total_allocated: 0,
+                routes: vec![&env],
+            },
+        }
+    }
+
+    /// Get fallback policy for a game
+    pub fn fallback_policy(env: Env, game_id: Symbol) -> FallbackPolicy {
+        match env.storage().instance().get(&DataKey::FeeConfig(game_id.clone())) {
+            Some(config) => FallbackPolicy {
+                game_id,
+                exists: true,
+                fallback_recipient: config.recipient,
+                fallback_percentage: 10000, // 100% in basis points
+            },
+            None => FallbackPolicy {
+                game_id,
+                exists: false,
+                fallback_recipient: Address::from_contract_id(&env.current_contract_address()),
+                fallback_percentage: 0,
+            },
+        }
     }
 
 }
