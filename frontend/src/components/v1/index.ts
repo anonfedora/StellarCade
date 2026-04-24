@@ -169,3 +169,40 @@ export type {
   TimelineItemData,
   TimelineItemStatus,
 } from "./Timeline";
+
+// New Components - Issue #637, #636, #635, #634
+export {
+  QuickPivotLinks,
+  default as QuickPivotLinksDefault,
+} from "./QuickPivotLinks";
+export type {
+  QuickPivotLinksProps,
+  PivotLink,
+} from "./QuickPivotLinks";
+
+export {
+  AnalyticsRangeSwitcher,
+  default as AnalyticsRangeSwitcherDefault,
+} from "./AnalyticsRangeSwitcher";
+export type {
+  AnalyticsRangeSwitcherProps,
+  TimeRange,
+} from "./AnalyticsRangeSwitcher";
+
+export {
+  AuditSnapshotCard,
+  default as AuditSnapshotCardDefault,
+} from "./AuditSnapshotCard";
+export type {
+  AuditSnapshotCardProps,
+  AuditSnapshot,
+} from "./AuditSnapshotCard";
+
+export {
+  QueueHealthWidget,
+  default as QueueHealthWidgetDefault,
+} from "./QueueHealthWidget";
+export type {
+  QueueHealthWidgetProps,
+  QueueMetrics,
+} from "./QueueHealthWidget";
