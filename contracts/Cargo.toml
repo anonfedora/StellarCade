@@ -86,6 +86,10 @@ members = [
     "vip-subscription",
     "vote-escrow",
     "wordle-clone",
+    "queue-rewards",
+    "reserve-manager",
+    "quest-redeemer",
+    "squad-match",
 ]
 
 exclude = [
