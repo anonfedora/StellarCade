@@ -108,6 +108,12 @@ export {
 export type { ResumeTaskBannerProps } from "./ResumeTaskBanner";
 
 export {
+  PendingActionResumeChip,
+  default as PendingActionResumeChipDefault,
+} from "./PendingActionResumeChip";
+export type { PendingActionResumeChipProps } from "./PendingActionResumeChip";
+
+export {
   NotificationPreferencesPanel,
   default as NotificationPreferencesPanelDefault,
 } from "./NotificationPreferencesPanel";

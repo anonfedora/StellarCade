@@ -11,6 +11,7 @@ import { commandStore } from "../components/v1/CommandPalette";
 import { DashboardMissionStrip } from "../components/v1/DashboardMissionStrip";
 import { QuickActionSurface } from "../components/v1/QuickActionSurface";
 import { RecoverableErrorPanel } from "../components/v1/RecoverableErrorPanel";
+import { PendingActionResumeChip } from "../components/v1/PendingActionResumeChip";
 import { ResumeTaskBanner } from "../components/v1/ResumeTaskBanner";
 import { SegmentedControl } from "../components/v1/SegmentedControl";
 import { WalletSessionActivityRail } from "../components/v1/WalletSessionActivityRail";
@@ -131,6 +132,7 @@ export const GameLobby: React.FC = () => {
   );
   const [pendingResumeContext, setPendingResumeContext] =
     useState<LobbyContext | null>(null);
+  const [pendingActionChipDismissed, setPendingActionChipDismissed] = useState(false);
   const wallet = useWalletStatus();
   const globalStoreRef = useRef<GlobalStateStore | null>(null);
   const walletSectionRef = useRef<HTMLDivElement | null>(null);
@@ -252,6 +254,12 @@ export const GameLobby: React.FC = () => {
       setPendingTransaction(state.pendingTransaction ?? null);
     });
   }, []);
+
+  useEffect(() => {
+    if (pendingTransaction) {
+      setPendingActionChipDismissed(false);
+    }
+  }, [pendingTransaction?.txHash, pendingTransaction?.updatedAt]);
 
   const retryNetworkCheck = useCallback(async () => {
     if (networkCheckPending) return;
@@ -685,6 +693,19 @@ export const GameLobby: React.FC = () => {
               onDismiss={() => setPendingResumeContext(null)}
               className="lobby-resume-banner"
               testId="lobby-resume-context-banner"
+            />
+          ) : null}
+
+          {pendingTransaction && !isTransactionDrawerOpen && !pendingActionChipDismissed ? (
+            <PendingActionResumeChip
+              label={pendingTransaction.operation.replace(/\./g, " ")}
+              detail={`${pendingTransaction.phase.toLowerCase().replace(/_/g, " ")} in progress`}
+              onResume={() => {
+                setIsTransactionDrawerOpen(true);
+                setPendingActionChipDismissed(false);
+              }}
+              onDismiss={() => setPendingActionChipDismissed(true)}
+              testId="lobby-pending-action-chip"
             />
           ) : null}
 

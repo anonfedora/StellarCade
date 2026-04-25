@@ -200,4 +200,68 @@ describe("GameLobby", () => {
     fireEvent.click(screen.getByTestId("lobby-resume-context-banner-dismiss-btn"));
     expect(screen.queryByTestId("lobby-resume-context-banner")).not.toBeInTheDocument();
   });
+
+  it("shows a pending-action resume chip for interrupted transaction flows", async () => {
+    localStorage.setItem(
+      "stc_global_state_v1",
+      JSON.stringify({
+        auth: { isAuthenticated: false },
+        flags: {},
+        pendingTransaction: {
+          operation: "wallet.deposit",
+          phase: "SUBMITTING",
+          txHash: "abc1234567890",
+          startedAt: 1_700_000_000_000,
+          updatedAt: 1_700_000_000_500,
+        },
+        storedAt: Date.now(),
+      }),
+    );
+    (ApiClient as any).prototype.getGames.mockResolvedValue({
+      success: true,
+      data: [{ id: "g1", name: "Game One", status: "active", wager: 25 }],
+    });
+
+    render(<GameLobby />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("lobby-pending-action-chip")).toHaveTextContent(
+        /wallet deposit/i,
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("lobby-pending-action-chip-resume-btn"));
+    expect(screen.getByTestId("transaction-detail-drawer")).toBeInTheDocument();
+  });
+
+  it("lets the user dismiss the pending-action chip", async () => {
+    localStorage.setItem(
+      "stc_global_state_v1",
+      JSON.stringify({
+        auth: { isAuthenticated: false },
+        flags: {},
+        pendingTransaction: {
+          operation: "wallet.deposit",
+          phase: "SUBMITTING",
+          txHash: "abc1234567890",
+          startedAt: 1_700_000_000_000,
+          updatedAt: 1_700_000_000_500,
+        },
+        storedAt: Date.now(),
+      }),
+    );
+    (ApiClient as any).prototype.getGames.mockResolvedValue({
+      success: true,
+      data: [{ id: "g1", name: "Game One", status: "active", wager: 25 }],
+    });
+
+    render(<GameLobby />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("lobby-pending-action-chip")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("lobby-pending-action-chip-dismiss-btn"));
+    expect(screen.queryByTestId("lobby-pending-action-chip")).not.toBeInTheDocument();
+  });
 });
