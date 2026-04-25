@@ -35,10 +35,13 @@ members = [
     "duel-engine",
     "emergency-pause",
     "epoch-scheduler",
+    "escrow-ledger",
     "escrow-marketplace",
     "escrow-vault",
+    "attendance-pass",
     "exploit-prevention",
     "fee-shield",
+    "fanout-distributor",
     "identity-registry",
     "lending-pool",
     "fee-management",
@@ -81,6 +84,7 @@ members = [
     "trivia-game",
     "upgrade-mechanism",
     "vip-subscription",
+    "vote-escrow",
     "wordle-clone",
 ]
 

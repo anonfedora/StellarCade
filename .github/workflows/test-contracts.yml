@@ -42,6 +42,10 @@ jobs:
           cd ../fee-shield && cargo build --target wasm32v1-none --release
           cd ../streak-ladder && cargo build --target wasm32v1-none --release
           cd ../creator-drops && cargo build --target wasm32v1-none --release
+          cd ../escrow-ledger && cargo build --target wasm32v1-none --release
+          cd ../attendance-pass && cargo build --target wasm32v1-none --release
+          cd ../fanout-distributor && cargo build --target wasm32v1-none --release
+          cd ../vote-escrow && cargo build --target wasm32v1-none --release
 
       - name: Run Tests
         run: |
@@ -58,6 +62,10 @@ jobs:
           cd ../fee-shield && cargo test --locked
           cd ../streak-ladder && cargo test --locked
           cd ../creator-drops && cargo test --locked
+          cd ../escrow-ledger && cargo test --locked
+          cd ../attendance-pass && cargo test --locked
+          cd ../fanout-distributor && cargo test --locked
+          cd ../vote-escrow && cargo test --locked
 
       - name: Verify Contract Documentation
         run: |
