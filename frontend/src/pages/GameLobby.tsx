@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiClient } from "../services/typed-api-sdk";
-import { Game } from "../types/api-client";
 import StatusCard from "../components/v1/StatusCard";
 import NetworkGuardBanner from "../components/v1/NetworkGuardBanner";
 import WalletStatusCard from "../components/v1/WalletStatusCard";
@@ -13,21 +11,40 @@ import { commandStore } from "../components/v1/CommandPalette";
 import { DashboardMissionStrip } from "../components/v1/DashboardMissionStrip";
 import { QuickActionSurface } from "../components/v1/QuickActionSurface";
 import { RecoverableErrorPanel } from "../components/v1/RecoverableErrorPanel";
+import { PendingActionResumeChip } from "../components/v1/PendingActionResumeChip";
+import { ResumeTaskBanner } from "../components/v1/ResumeTaskBanner";
+import { SegmentedControl } from "../components/v1/SegmentedControl";
 import { WalletSessionActivityRail } from "../components/v1/WalletSessionActivityRail";
-import { isSupportedNetwork } from "../utils/v1/useNetworkGuard";
 import { useWalletStatus } from "../hooks/v1/useWalletStatus";
+import { ApiClient } from "../services/typed-api-sdk";
 import GlobalStateStore, {
-  ONBOARDING_CHECKLIST_DISMISSED_FLAG,
   getTableDensityPreference,
+  ONBOARDING_CHECKLIST_DISMISSED_FLAG,
   persistTableDensityPreference,
   type TableDensityPreference,
 } from "../services/global-state-store";
+import { isSupportedNetwork } from "../utils/v1/useNetworkGuard";
+import type { Game } from "../types/api-client";
 import type { PendingTransactionSnapshot } from "../types/global-state";
 import "./GameLobbyDashboard.css";
 
 const DASHBOARD_DENSITY_SCOPE = "dashboard-surfaces";
 const DASHBOARD_COMMAND_SURFACE_USED_KEY = "stc_dashboard_command_surface_used_v1";
 const DASHBOARD_SESSION_KEY = "stc_dashboard_session_seen_v1";
+const DASHBOARD_LAST_CONTEXT_KEY = "stc_dashboard_last_context_v1";
+
+type LobbyContext =
+  | "wallet-panel"
+  | "live-arena"
+  | "leaderboard"
+  | "activity-rail";
+
+const LOBBY_CONTEXT_LABELS: Record<LobbyContext, string> = {
+  "wallet-panel": "Wallet and network status",
+  "live-arena": "Live Arena",
+  leaderboard: "Active Games Leaderboard",
+  "activity-rail": "Wallet activity rail",
+};
 
 interface LeaderboardRow {
   rank: number;
@@ -54,6 +71,28 @@ function formatPendingTxLabel(
     return "No pending tx";
   }
   return pendingTransaction.phase.replace(/_/g, " ");
+}
+
+function readStoredLobbyContext(): LobbyContext | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const stored = sessionStorage.getItem(DASHBOARD_LAST_CONTEXT_KEY);
+    if (
+      stored === "wallet-panel" ||
+      stored === "live-arena" ||
+      stored === "leaderboard" ||
+      stored === "activity-rail"
+    ) {
+      return stored;
+    }
+  } catch {
+    // no-op
+  }
+
+  return null;
 }
 
 export const GameLobby: React.FC = () => {
@@ -91,11 +130,17 @@ export const GameLobby: React.FC = () => {
   const [tableDensity, setTableDensity] = useState<TableDensityPreference>(() =>
     getTableDensityPreference(DASHBOARD_DENSITY_SCOPE),
   );
+  const [pendingResumeContext, setPendingResumeContext] =
+    useState<LobbyContext | null>(null);
+  const [pendingActionChipDismissed, setPendingActionChipDismissed] = useState(false);
   const wallet = useWalletStatus();
   const globalStoreRef = useRef<GlobalStateStore | null>(null);
   const walletSectionRef = useRef<HTMLDivElement | null>(null);
   const gamesSectionRef = useRef<HTMLElement | null>(null);
   const activityRailRef = useRef<HTMLDivElement | null>(null);
+  const leaderboardSectionRef = useRef<HTMLElement | null>(null);
+  const previousWalletStatusRef = useRef(wallet.status);
+  const previousReconnectAtRef = useRef(wallet.lastReconnectAt);
 
   if (!globalStoreRef.current) {
     globalStoreRef.current = new GlobalStateStore();
@@ -124,6 +169,7 @@ export const GameLobby: React.FC = () => {
 
   const networkMismatch =
     wallet.capabilities.isConnected && !networkSupport.isSupported;
+
   const walletDiagnostics = useMemo(
     () => [
       {
@@ -148,6 +194,10 @@ export const GameLobby: React.FC = () => {
         tone: networkCheckPending ? ("warning" as const) : ("neutral" as const),
       },
       {
+        label: "Reconnect phase",
+        value: wallet.refreshState.phase.toLowerCase().replace(/_/g, " "),
+      },
+      {
         label: "Last wallet sync",
         value: wallet.lastUpdatedAt
           ? new Date(wallet.lastUpdatedAt).toLocaleTimeString()
@@ -159,7 +209,8 @@ export const GameLobby: React.FC = () => {
       networkSupport.isSupported,
       networkSupport.normalizedActual,
       wallet.lastUpdatedAt,
-      wallet.provider,
+      wallet.provider?.name,
+      wallet.refreshState.phase,
     ],
   );
 
@@ -204,6 +255,12 @@ export const GameLobby: React.FC = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (pendingTransaction) {
+      setPendingActionChipDismissed(false);
+    }
+  }, [pendingTransaction?.txHash, pendingTransaction?.updatedAt]);
+
   const retryNetworkCheck = useCallback(async () => {
     if (networkCheckPending) return;
     setNetworkCheckPending(true);
@@ -212,7 +269,7 @@ export const GameLobby: React.FC = () => {
     } finally {
       setNetworkCheckPending(false);
     }
-  }, [wallet, networkCheckPending]);
+  }, [networkCheckPending, wallet]);
 
   const recoverNetwork = useCallback(async () => {
     await retryNetworkCheck();
@@ -221,6 +278,39 @@ export const GameLobby: React.FC = () => {
   const scrollToElement = useCallback((element: HTMLElement | null) => {
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  const persistLobbyContext = useCallback((context: LobbyContext) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    try {
+      sessionStorage.setItem(DASHBOARD_LAST_CONTEXT_KEY, context);
+    } catch {
+      // no-op
+    }
+  }, []);
+
+  const scrollToContext = useCallback(
+    (context: LobbyContext) => {
+      persistLobbyContext(context);
+
+      switch (context) {
+        case "wallet-panel":
+          scrollToElement(walletSectionRef.current);
+          break;
+        case "live-arena":
+          scrollToElement(gamesSectionRef.current);
+          break;
+        case "leaderboard":
+          scrollToElement(leaderboardSectionRef.current);
+          break;
+        case "activity-rail":
+          scrollToElement(activityRailRef.current);
+          break;
+      }
+    },
+    [persistLobbyContext, scrollToElement],
+  );
 
   const markQuickActionsUsed = useCallback(() => {
     setQuickActionsUsed(true);
@@ -316,10 +406,31 @@ export const GameLobby: React.FC = () => {
     [activeGames.length, totalPrizeSignal],
   );
 
-  const handleDensityChange = useCallback((density: TableDensityPreference) => {
-    setTableDensity(density);
-    persistTableDensityPreference(DASHBOARD_DENSITY_SCOPE, density);
-  }, []);
+  const handleDensityChange = useCallback(
+    (density: TableDensityPreference) => {
+      setTableDensity(density);
+      persistTableDensityPreference(DASHBOARD_DENSITY_SCOPE, density);
+      persistLobbyContext("leaderboard");
+    },
+    [persistLobbyContext],
+  );
+
+  useEffect(() => {
+    const previousStatus = previousWalletStatusRef.current;
+    const previousReconnectAt = previousReconnectAtRef.current;
+
+    if (
+      previousStatus === "RECONNECTING" &&
+      wallet.status === "CONNECTED" &&
+      wallet.lastReconnectAt !== null &&
+      wallet.lastReconnectAt !== previousReconnectAt
+    ) {
+      setPendingResumeContext(readStoredLobbyContext());
+    }
+
+    previousWalletStatusRef.current = wallet.status;
+    previousReconnectAtRef.current = wallet.lastReconnectAt;
+  }, [wallet.lastReconnectAt, wallet.status]);
 
   const missionItems = useMemo(
     () => [
@@ -330,7 +441,7 @@ export const GameLobby: React.FC = () => {
           "Open the wallet panel to connect or verify the current network before you start a match.",
         complete: wallet.capabilities.isConnected,
         actionLabel: "Open wallet panel",
-        onAction: () => scrollToElement(walletSectionRef.current),
+        onAction: () => scrollToContext("wallet-panel"),
       },
       {
         id: "scan-live-games",
@@ -339,7 +450,7 @@ export const GameLobby: React.FC = () => {
           "Jump to the active game grid and confirm which matches are open right now.",
         complete: games.length > 0,
         actionLabel: "Jump to games",
-        onAction: () => scrollToElement(gamesSectionRef.current),
+        onAction: () => scrollToContext("live-arena"),
       },
       {
         id: "learn-commands",
@@ -355,7 +466,7 @@ export const GameLobby: React.FC = () => {
       games.length,
       openCommandCenter,
       quickActionsUsed,
-      scrollToElement,
+      scrollToContext,
       wallet.capabilities.isConnected,
     ],
   );
@@ -375,7 +486,7 @@ export const GameLobby: React.FC = () => {
         description: "Jump to wallet status, provider details, and network diagnostics.",
         onSelect: () => {
           markQuickActionsUsed();
-          scrollToElement(walletSectionRef.current);
+          scrollToContext("wallet-panel");
         },
       },
       {
@@ -391,11 +502,11 @@ export const GameLobby: React.FC = () => {
         description: "Review the latest wallet-session sync, tx, and lobby refresh events.",
         onSelect: () => {
           markQuickActionsUsed();
-          scrollToElement(activityRailRef.current);
+          scrollToContext("activity-rail");
         },
       },
     ],
-    [handleRefreshLobby, markQuickActionsUsed, openCommandCenter, retrying, scrollToElement],
+    [handleRefreshLobby, markQuickActionsUsed, openCommandCenter, retrying, scrollToContext],
   );
 
   const activityItems = useMemo(() => {
@@ -507,7 +618,7 @@ export const GameLobby: React.FC = () => {
         retryDisabled={retrying}
         secondaryAction={{
           label: "Review wallet panel",
-          onClick: () => scrollToElement(walletSectionRef.current),
+          onClick: () => scrollToContext("wallet-panel"),
         }}
         testId="lobby-error"
       />
@@ -524,10 +635,7 @@ export const GameLobby: React.FC = () => {
         />
       ) : null}
 
-      <section
-        aria-label="Wallet and network status"
-        className="lobby-dashboard"
-      >
+      <section aria-label="Wallet and network status" className="lobby-dashboard">
         <div className="lobby-dashboard__col" ref={walletSectionRef}>
           <NetworkGuardBanner
             network={wallet.network}
@@ -552,6 +660,11 @@ export const GameLobby: React.FC = () => {
             onConnect={() => wallet.connect()}
             onDisconnect={wallet.disconnect}
             onRetry={wallet.refresh}
+            onReconnect={wallet.refresh}
+            droppedSession={wallet.sessionDropped}
+            reconnectPending={wallet.status === "RECONNECTING"}
+            reconnectProgress={wallet.status === "RECONNECTING" ? 65 : 0}
+            reconnectProgressLabel="Restoring your wallet session"
             networkMismatch={networkMismatch}
             networkRecoveryPending={networkCheckPending}
             onRecoverNetwork={recoverNetwork}
@@ -569,6 +682,32 @@ export const GameLobby: React.FC = () => {
           </div>
 
           <QuickActionSurface actions={quickActions} />
+
+          {pendingResumeContext ? (
+            <ResumeTaskBanner
+              taskName={LOBBY_CONTEXT_LABELS[pendingResumeContext]}
+              onResume={() => {
+                scrollToContext(pendingResumeContext);
+                setPendingResumeContext(null);
+              }}
+              onDismiss={() => setPendingResumeContext(null)}
+              className="lobby-resume-banner"
+              testId="lobby-resume-context-banner"
+            />
+          ) : null}
+
+          {pendingTransaction && !isTransactionDrawerOpen && !pendingActionChipDismissed ? (
+            <PendingActionResumeChip
+              label={pendingTransaction.operation.replace(/\./g, " ")}
+              detail={`${pendingTransaction.phase.toLowerCase().replace(/_/g, " ")} in progress`}
+              onResume={() => {
+                setIsTransactionDrawerOpen(true);
+                setPendingActionChipDismissed(false);
+              }}
+              onDismiss={() => setPendingActionChipDismissed(true)}
+              testId="lobby-pending-action-chip"
+            />
+          ) : null}
 
           <div className="lobby-kpi-strip" data-testid="lobby-kpi-strip">
             <StatusCard
@@ -637,9 +776,7 @@ export const GameLobby: React.FC = () => {
               compact={true}
               state={prizePoolState}
               statusLabel={
-                prizePoolState
-                  ? "Prize pool signal live"
-                  : "Awaiting prize-pool data"
+                prizePoolState ? "Prize pool signal live" : "Awaiting prize-pool data"
               }
               footerMeta={
                 activeGames.length > 0
@@ -683,36 +820,23 @@ export const GameLobby: React.FC = () => {
           <section
             aria-labelledby="leaderboard-heading"
             className="leaderboard-section"
+            ref={leaderboardSectionRef}
           >
             <SectionHeader
               titleId="leaderboard-heading"
               title="Active Games Leaderboard"
               description="Switch between standard and compact density to scan live tables faster."
               actions={
-                <div
-                  className="density-toggle"
-                  role="group"
-                  aria-label="Table density"
-                >
-                  <button
-                    type="button"
-                    className={`density-toggle__button ${tableDensity === "standard" ? "is-active" : ""}`.trim()}
-                    onClick={() => handleDensityChange("standard")}
-                    aria-pressed={tableDensity === "standard"}
-                    data-testid="leaderboard-density-standard"
-                  >
-                    Standard
-                  </button>
-                  <button
-                    type="button"
-                    className={`density-toggle__button ${tableDensity === "compact" ? "is-active" : ""}`.trim()}
-                    onClick={() => handleDensityChange("compact")}
-                    aria-pressed={tableDensity === "compact"}
-                    data-testid="leaderboard-density-compact"
-                  >
-                    Compact
-                  </button>
-                </div>
+                <SegmentedControl
+                  label="Table density"
+                  value={tableDensity}
+                  onChange={handleDensityChange}
+                  options={[
+                    { value: "standard", label: "Standard" },
+                    { value: "compact", label: "Compact" },
+                  ]}
+                  testId="leaderboard-density"
+                />
               }
             />
 

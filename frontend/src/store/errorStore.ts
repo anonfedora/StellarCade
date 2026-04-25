@@ -13,6 +13,8 @@ import type { AppError } from '../types/errors';
 /** Maximum number of errors retained in history before the oldest is dropped. */
 const MAX_HISTORY = 50;
 const MAX_TOAST_HISTORY = 20;
+const MAX_ACTIVE_TOASTS = 3;
+const MAX_DEFERRED_TOASTS = 12;
 const DEFAULT_TOAST_DURATION_MS = 5000;
 
 export type ToastTone = 'success' | 'info' | 'warning' | 'error';
@@ -46,6 +48,8 @@ interface ErrorState {
   history: AppError[];
   /** Active toast notifications in display order. */
   toasts: ToastNotification[];
+  /** Deferred notifications waiting for an open slot in the active stack. */
+  deferredToasts: ToastNotification[];
   /** Recently dismissed notifications, newest first, capped at MAX_TOAST_HISTORY. */
   toastHistory: ToastNotification[];
   /** Record an error as current and prepend it to history. */
@@ -60,6 +64,8 @@ interface ErrorState {
   dismissToast: (id: string) => void;
   /** Clears all active toasts and any pending dismiss timers. */
   clearToasts: () => void;
+  /** Clears deferred notifications without promoting them. */
+  clearDeferredToasts: () => void;
   /** Clears dismissed toast history. */
   clearToastHistory: () => void;
 }
@@ -68,6 +74,7 @@ export const useErrorStore = create<ErrorState>()((set) => ({
   current: null,
   history: [],
   toasts: [],
+  deferredToasts: [],
   toastHistory: [],
 
   setError: (error) =>
@@ -79,13 +86,13 @@ export const useErrorStore = create<ErrorState>()((set) => ({
         source: error.domain,
         durationMs: DEFAULT_TOAST_DURATION_MS,
       });
-      scheduleToastDismissal(toast.id, toast.durationMs);
+      const nextToastState = appendToast(state, toast);
 
       return {
         current: error,
         // Prepend newest; cap at MAX_HISTORY to bound memory usage.
         history: [error, ...state.history].slice(0, MAX_HISTORY),
-        toasts: [...state.toasts, toast],
+        ...nextToastState,
       };
     }),
 
@@ -95,39 +102,70 @@ export const useErrorStore = create<ErrorState>()((set) => ({
 
   enqueueToast: (toastInput) => {
     const toast = createToast(toastInput);
-    scheduleToastDismissal(toast.id, toast.durationMs);
-    set((state) => ({
-      toasts: [...state.toasts, toast],
-    }));
+    set((state) => appendToast(state, toast));
     return toast.id;
   },
 
   dismissToast: (id) =>
     set((state) => {
       const toast = state.toasts.find((entry) => entry.id === id);
-      if (!toast) {
+      const deferredToast = state.deferredToasts.find((entry) => entry.id === id);
+      if (!toast && !deferredToast) {
         clearDismissalTimer(id);
         return state;
       }
 
       clearDismissalTimer(id);
+      const remainingActive = toast
+        ? state.toasts.filter((entry) => entry.id !== id)
+        : state.toasts;
+      const remainingDeferred = deferredToast
+        ? state.deferredToasts.filter((entry) => entry.id !== id)
+        : state.deferredToasts;
+      const promoted = !deferredToast ? remainingDeferred[0] : undefined;
+
+      if (promoted) {
+        scheduleToastDismissal(promoted.id, promoted.durationMs);
+      }
+
       return {
-        toasts: state.toasts.filter((entry) => entry.id !== id),
-        toastHistory: [{ ...toast, dismissedAt: Date.now() }, ...state.toastHistory].slice(
-          0,
-          MAX_TOAST_HISTORY,
-        ),
+        toasts: promoted ? [...remainingActive, promoted] : remainingActive,
+        deferredToasts: promoted ? remainingDeferred.slice(1) : remainingDeferred,
+        toastHistory: [
+          { ...(toast ?? deferredToast)!, dismissedAt: Date.now() },
+          ...state.toastHistory,
+        ].slice(0, MAX_TOAST_HISTORY),
       };
     }),
 
   clearToasts: () =>
     set((state) => {
       state.toasts.forEach((toast) => clearDismissalTimer(toast.id));
-      return { toasts: [] };
+      return { toasts: [], deferredToasts: [] };
     }),
+
+  clearDeferredToasts: () => set({ deferredToasts: [] }),
 
   clearToastHistory: () => set({ toastHistory: [] }),
 }));
+
+function appendToast(
+  state: Pick<ErrorState, "toasts" | "deferredToasts">,
+  toast: ToastNotification,
+) {
+  if (state.toasts.length < MAX_ACTIVE_TOASTS) {
+    scheduleToastDismissal(toast.id, toast.durationMs);
+    return {
+      toasts: [...state.toasts, toast],
+      deferredToasts: state.deferredToasts,
+    };
+  }
+
+  return {
+    toasts: state.toasts,
+    deferredToasts: [...state.deferredToasts, toast].slice(-MAX_DEFERRED_TOASTS),
+  };
+}
 
 function createToast(toast: ToastInput): ToastNotification {
   toastCounter += 1;

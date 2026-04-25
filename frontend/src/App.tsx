@@ -1,152 +1,59 @@
-import React, { Suspense, lazy } from 'react';
-import GameLobby from './pages/GameLobby';
-import { RouteErrorBoundary } from './components/v1/RouteErrorBoundary';
-import ProfileSettings from './pages/ProfileSettings';
-import Portfolio from './pages/Portfolio';
-import { I18nProvider, useI18n } from './i18n/provider';
-import LocaleSwitcher from './components/LocaleSwitcher';
-import Breadcrumbs from './components/BreadCrumbs';
-import AppSidebar from './components/v1/AppSidebar';
-
-import { ModalStackProvider } from './components/v1/modal-stack';
-import { FeatureFlagsProvider } from './services/feature-flags';
-import CommandPalette, { type Command } from './components/v1/CommandPalette';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
-import { useErrorStore } from './store/errorStore';
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter, useNavigate } from "react-router-dom";
+import GameLobby from "./pages/GameLobby";
+import { RouteErrorBoundary } from "./components/v1/RouteErrorBoundary";
+import ProfileSettings from "./pages/ProfileSettings";
+import Portfolio from "./pages/Portfolio";
+import { I18nProvider, useI18n } from "./i18n/provider";
+import LocaleSwitcher from "./components/LocaleSwitcher";
+import Breadcrumbs from "./components/BreadCrumbs";
+import AppSidebar from "./components/v1/AppSidebar";
+import NotificationCenter from "./components/v1/NotificationCenter";
+import { ModalStackProvider } from "./components/v1/modal-stack";
+import { FeatureFlagsProvider } from "./services/feature-flags";
+import CommandPalette, { type Command } from "./components/v1/CommandPalette";
 
 const DevContractCallSimulatorPanel = import.meta.env.DEV
   ? lazy(() =>
-      import('./components/dev/ContractCallSimulatorPanel').then((m) => ({
-        default: m.ContractCallSimulatorPanel,
+      import("./components/dev/ContractCallSimulatorPanel").then((module) => ({
+        default: module.ContractCallSimulatorPanel,
       })),
     )
   : undefined;
 
-const toneLabelMap = {
-  success: 'Success',
-  info: 'Info',
-  warning: 'Warning',
-  error: 'Error',
-} as const;
+const MAIN_CONTENT_ID = "main-content";
 
-const MAIN_CONTENT_ID = 'main-content';
-
-/* ───────────────── Notification Center ───────────────── */
-
-function NotificationCenter(): React.JSX.Element | null {
-  const toasts = useErrorStore((state) => state.toasts);
-  const toastHistory = useErrorStore((state) => state.toastHistory);
-  const dismissToast = useErrorStore((state) => state.dismissToast);
-  const clearToastHistory = useErrorStore((state) => state.clearToastHistory);
-  const [historyOpen, setHistoryOpen] = React.useState(false);
-
-  if (toasts.length === 0 && toastHistory.length === 0) {
-    return null;
-  }
-
-  return (
-    <aside className="toast-center" aria-label="Notifications">
-      <div className="toast-center__stack">
-        {toasts.map((toast) => (
-          <section
-            key={toast.id}
-            className={`toast-center__toast toast-center__toast--${toast.tone}`}
-            role="status"
-            aria-live="polite"
-          >
-            <div className="toast-center__toast-header">
-              <span className="toast-center__tone">{toneLabelMap[toast.tone]}</span>
-
-              <button
-                type="button"
-                className="toast-center__dismiss"
-                aria-label={`Dismiss ${toast.title}`}
-                onClick={() => dismissToast(toast.id)}
-              >
-                Dismiss
-              </button>
-            </div>
-
-            <strong className="toast-center__title">{toast.title}</strong>
-            <p className="toast-center__message">{toast.message}</p>
-          </section>
-        ))}
-      </div>
-
-      {toastHistory.length > 0 && (
-        <div className="toast-center__history">
-          <button
-            type="button"
-            className="toast-center__history-toggle"
-            aria-expanded={historyOpen}
-            onClick={() => setHistoryOpen((c) => !c)}
-          >
-            {historyOpen ? 'Hide recent notifications' : 'Show recent notifications'}
-          </button>
-
-          {historyOpen && (
-            <div className="toast-center__history-panel">
-              <div className="toast-center__history-header">
-                <strong>Recent notifications</strong>
-
-                <button
-                  type="button"
-                  className="toast-center__history-clear"
-                  onClick={clearToastHistory}
-                >
-                  Clear
-                </button>
-              </div>
-
-              <ul className="toast-center__history-list">
-                {toastHistory.map((toast) => (
-                  <li key={toast.id} className="toast-center__history-item">
-                    <span>{toast.title}</span>
-                    <span>{toast.message}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-    </aside>
-  );
-}
-
-/* ───────────────── App Content ───────────────── */
-
-type AppRoute = 'lobby' | 'games' | 'portfolio' | 'profile';
+type AppRoute = "lobby" | "games" | "portfolio" | "profile";
 
 const AppContent: React.FC = () => {
   const { t } = useI18n();
-  const [route, setRoute] = React.useState<AppRoute>('lobby');
+  const [route, setRoute] = React.useState<AppRoute>("lobby");
   const navigate = useNavigate();
 
   const commands: Command[] = [
     {
-      id: 'go-lobby',
-      label: 'Go to Lobby',
-      description: 'Open the game lobby',
-      action: () => navigate('/'),
+      id: "go-lobby",
+      label: "Go to Lobby",
+      description: "Open the game lobby",
+      action: () => navigate("/"),
     },
     {
-      id: 'go-games',
-      label: 'Go to Games',
-      description: 'Open the games section',
-      action: () => setRoute('games'),
+      id: "go-games",
+      label: "Go to Games",
+      description: "Open the games section",
+      action: () => setRoute("games"),
     },
     {
-      id: 'go-profile',
-      label: 'Go to Profile Settings',
-      description: 'Open the profile settings page',
-      action: () => navigate('/profile'),
+      id: "go-profile",
+      label: "Go to Profile Settings",
+      description: "Open the profile settings page",
+      action: () => navigate("/profile"),
     },
     {
-      id: 'go-portfolio',
-      label: 'Go to Portfolio',
-      description: 'Open wallet, rewards, and collectibles',
-      action: () => setRoute('portfolio'),
+      id: "go-portfolio",
+      label: "Go to Portfolio",
+      description: "Open wallet, rewards, and collectibles",
+      action: () => setRoute("portfolio"),
     },
   ];
 
@@ -164,7 +71,7 @@ const AppContent: React.FC = () => {
 
           event.preventDefault();
           mainContent.focus();
-          mainContent.scrollIntoView?.({ block: 'start' });
+          mainContent.scrollIntoView?.({ block: "start" });
         }}
       >
         Skip to main content
@@ -174,7 +81,7 @@ const AppContent: React.FC = () => {
 
       <div className="app-main-layout">
         <header className="app-header">
-          <div className="logo">{t('app.title')}</div>
+          <div className="logo">{t("app.title")}</div>
           <LocaleSwitcher />
         </header>
 
@@ -182,13 +89,13 @@ const AppContent: React.FC = () => {
 
         <main className="app-content" id={MAIN_CONTENT_ID} tabIndex={-1}>
           <RouteErrorBoundary>
-            {route === 'profile' ? (
+            {route === "profile" ? (
               <ProfileSettings />
-            ) : route === 'portfolio' ? (
+            ) : route === "portfolio" ? (
               <Portfolio
-                onOpenWallet={() => setRoute('profile')}
-                onBrowseRewards={() => setRoute('games')}
-                onBrowseCollectibles={() => setRoute('games')}
+                onOpenWallet={() => setRoute("profile")}
+                onBrowseRewards={() => setRoute("games")}
+                onBrowseCollectibles={() => setRoute("games")}
               />
             ) : (
               <GameLobby />
@@ -198,11 +105,11 @@ const AppContent: React.FC = () => {
 
         <footer className="app-footer">
           <div className="footer-content">
-            <p>{t('footer.copyright')}</p>
+            <p>{t("footer.copyright")}</p>
 
             <div className="footer-links">
-              <a href="/terms">{t('footer.terms')}</a>
-              <a href="/privacy">{t('footer.privacy')}</a>
+              <a href="/terms">{t("footer.terms")}</a>
+              <a href="/privacy">{t("footer.privacy")}</a>
             </div>
           </div>
         </footer>
@@ -216,8 +123,6 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-/* ───────────────── App Root ───────────────── */
 
 const App: React.FC = () => {
   return (
@@ -233,6 +138,6 @@ const App: React.FC = () => {
   );
 };
 
-export { Drawer } from './components/v1/Drawer';
+export { Drawer } from "./components/v1/Drawer";
 
 export default App;

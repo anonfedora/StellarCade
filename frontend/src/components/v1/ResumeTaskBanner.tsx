@@ -52,3 +52,5 @@ export const ResumeTaskBanner: React.FC<ResumeTaskBannerProps> = ({
     </div>
   );
 };
+
+export default ResumeTaskBanner;
