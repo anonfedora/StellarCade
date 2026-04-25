@@ -239,6 +239,10 @@
   margin-top: 1rem;
 }
 
+.lobby-resume-banner {
+  margin-top: 1rem;
+}
+
 @media (max-width: 600px) {
   .dashboard-mission-strip__header,
   .quick-action-surface__header,

@@ -88,6 +88,26 @@ export {
 export type { SessionTimeoutModalProps } from "./SessionTimeoutModal";
 
 export {
+  SegmentedControl,
+  default as SegmentedControlDefault,
+} from "./SegmentedControl";
+export type {
+  SegmentedControlOption,
+  SegmentedControlProps,
+} from "./SegmentedControl";
+
+export {
+  NotificationCenter,
+  default as NotificationCenterDefault,
+} from "./NotificationCenter";
+
+export {
+  ResumeTaskBanner,
+  default as ResumeTaskBannerDefault,
+} from "./ResumeTaskBanner";
+export type { ResumeTaskBannerProps } from "./ResumeTaskBanner";
+
+export {
   NotificationPreferencesPanel,
   default as NotificationPreferencesPanelDefault,
 } from "./NotificationPreferencesPanel";
