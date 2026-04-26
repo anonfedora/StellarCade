@@ -38,6 +38,8 @@ members = [
     "escrow-ledger",
     "escrow-marketplace",
     "escrow-vault",
+    "mission-ledger",
+    "vault-claims",
     "attendance-pass",
     "exploit-prevention",
     "fee-shield",
