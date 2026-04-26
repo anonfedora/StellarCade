@@ -1993,6 +1993,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-badge-minter"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 21.7.7",
+]
+
+[[package]]
 name = "stellarcade-balance-management"
 version = "0.1.0"
 dependencies = [
@@ -2473,6 +2480,20 @@ name = "stellarcade-reward-vesting"
 version = "0.1.0"
 dependencies = [
  "soroban-sdk 25.3.1",
+]
+
+[[package]]
+name = "stellarcade-season-pass"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
+name = "stellarcade-season-rewards-vault"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 21.7.7",
 ]
 
 [[package]]
