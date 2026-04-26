@@ -101,6 +101,7 @@ exclude = [
     "higher-lower",
     "challenge-ladder",
     "merch-redemption",
+    "profile-perks",
 ]
 
 [profile.release]
