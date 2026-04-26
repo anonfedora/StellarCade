@@ -1979,6 +1979,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-attendance-pass"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
 name = "stellarcade-balance-management"
 version = "0.1.0"
 dependencies = [
@@ -2185,6 +2192,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-escrow-ledger"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
 name = "stellarcade-escrow-marketplace"
 version = "0.1.0"
 dependencies = [
@@ -2193,6 +2207,13 @@ dependencies = [
 
 [[package]]
 name = "stellarcade-escrow-vault"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
+name = "stellarcade-fanout-distributor"
 version = "0.1.0"
 dependencies = [
  "soroban-sdk 25.3.1",
@@ -2406,6 +2427,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-reward-router"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 21.7.7",
+]
+
+[[package]]
 name = "stellarcade-reward-stream"
 version = "0.1.0"
 dependencies = [
@@ -2490,6 +2518,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-tournament-lobby"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 21.7.7",
+]
+
+[[package]]
 name = "stellarcade-tournament-system"
 version = "0.1.0"
 dependencies = [
@@ -2526,6 +2561,13 @@ dependencies = [
 
 [[package]]
 name = "stellarcade-vip-subscription"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
+name = "stellarcade-vote-escrow"
 version = "0.1.0"
 dependencies = [
  "soroban-sdk 25.3.1",
