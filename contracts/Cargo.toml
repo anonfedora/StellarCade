@@ -94,6 +94,7 @@ members = [
     "reserve-manager",
     "quest-redeemer",
     "squad-match",
+    "sponsorship-ledger",
 ]
 
 exclude = [
