@@ -96,6 +96,7 @@ members = [
     "reserve-manager",
     "quest-redeemer",
     "squad-match",
+    "sponsor-pool",
     "sponsorship-ledger",
 ]
 

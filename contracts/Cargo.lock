@@ -2497,6 +2497,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "stellarcade-sponsor-pool"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk 25.3.1",
+]
+
+[[package]]
 name = "stellarcade-sponsorship-ledger"
 version = "0.1.0"
 dependencies = [
