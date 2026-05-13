@@ -1,7 +1,7 @@
 use crate::types::EscrowRecord;
-use soroban_sdk::{Address, Env};
+use soroban_sdk::Env;
 
-use crate::lib::DataKey;
+use crate::DataKey;
 
 pub fn set_escrow(env: &Env, record: &EscrowRecord) {
     env.storage()
