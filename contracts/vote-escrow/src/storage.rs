@@ -1,7 +1,7 @@
 use crate::types::LockRecord;
 use soroban_sdk::Env;
 
-use crate::lib::DataKey;
+use crate::DataKey;
 
 pub fn set_lock(env: &Env, record: &LockRecord) {
     env.storage()

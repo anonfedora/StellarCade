@@ -1,7 +1,7 @@
 use crate::types::PassRecord;
 use soroban_sdk::Env;
 
-use crate::lib::DataKey;
+use crate::DataKey;
 
 pub fn set_pass(env: &Env, record: &PassRecord) {
     env.storage()

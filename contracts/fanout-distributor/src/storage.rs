@@ -1,7 +1,7 @@
 use crate::types::BatchRecord;
 use soroban_sdk::Env;
 
-use crate::lib::DataKey;
+use crate::DataKey;
 
 pub fn set_batch(env: &Env, record: &BatchRecord) {
     env.storage()
