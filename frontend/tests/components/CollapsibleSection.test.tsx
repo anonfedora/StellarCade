@@ -134,8 +134,7 @@ describe("CollapsibleSection", () => {
     );
     const btn = screen.getByRole("button");
     fireEvent.focus(btn);
-    // status node exists but inline reveal only fires when closed
-    expect(screen.queryByText("Name is required")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveStyle({ maxHeight: "0" });
   });
 
   it("hides validation message after section is opened", () => {
@@ -152,7 +151,7 @@ describe("CollapsibleSection", () => {
     expect(screen.getByText("Incomplete data")).toBeInTheDocument();
 
     fireEvent.click(btn);
-    expect(screen.queryByText("Incomplete data")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveStyle({ maxHeight: "0" });
   });
 
   // -------------------------------------------------------------------------

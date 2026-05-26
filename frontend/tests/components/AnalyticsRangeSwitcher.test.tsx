@@ -1,10 +1,10 @@
 /**
- * @jest-environment happy-dom
+ * @vitest-environment happy-dom
  */
 
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalyticsRangeSwitcher, type TimeRange } from '@/components/v1/AnalyticsRangeSwitcher';
 
 const mockRanges: TimeRange[] = [
@@ -15,10 +15,10 @@ const mockRanges: TimeRange[] = [
 ];
 
 describe('AnalyticsRangeSwitcher', () => {
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Primary Success Path', () => {

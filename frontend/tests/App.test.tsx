@@ -4,6 +4,7 @@
 
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Drawer } from "@/components/v1/Drawer";
 
 beforeEach(() => {
   vi.resetModules();
@@ -141,7 +142,6 @@ describe("Breadcrumb Navigation", () => {
 
 describe("Drawer Framework (#475)", () => {
   it("renders an open drawer with title and body content", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(
       <Drawer open={true} onClose={onClose} title="Test Drawer">
@@ -156,7 +156,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("calls onClose when the close button is clicked", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={true} onClose={onClose} title="Close Me" />);
 
@@ -166,7 +165,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("calls onClose when the backdrop is clicked", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={true} onClose={onClose} title="Backdrop" />);
 
@@ -176,7 +174,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("calls onClose when Escape key is pressed", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={true} onClose={onClose} title="Escape Test" />);
 
@@ -185,7 +182,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("does not call onClose on Escape when drawer is closed", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={false} onClose={onClose} title="Closed" />);
 
@@ -194,7 +190,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("sets inert on the drawer element when closed for background content protection", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={false} onClose={onClose} title="Inert Test" />);
 
@@ -203,7 +198,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("has role dialog and aria-modal when open", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={true} onClose={onClose} title="A11y check" />);
 
@@ -213,7 +207,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("moves focus to close button when drawer opens (focus handoff)", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     const { rerender } = render(
       <Drawer open={false} onClose={onClose} title="Focus" />,
@@ -229,7 +222,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("supports left-side drawer variant", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(<Drawer open={true} onClose={onClose} side="left" title="Left" />);
 
@@ -238,7 +230,6 @@ describe("Drawer Framework (#475)", () => {
   });
 
   it("traps focus within the drawer while it is open", async () => {
-    const { Drawer } = await import("@/App");
     const onClose = vi.fn();
     render(
       <Drawer open={true} onClose={onClose} title="Trap">

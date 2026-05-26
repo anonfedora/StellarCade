@@ -20,7 +20,7 @@ export interface TimeRange {
 
 export interface AnalyticsRangeSwitcherProps {
   /** Available time ranges */
-  ranges: TimeRange[];
+  ranges?: TimeRange[];
   /** Currently selected range ID */
   selectedId: string;
   /** Callback when range changes */

@@ -1,10 +1,10 @@
 /**
- * @jest-environment happy-dom
+ * @vitest-environment happy-dom
  */
 
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuickPivotLinks, type PivotLink } from '@/components/v1/QuickPivotLinks';
 
 const mockLinks: PivotLink[] = [
@@ -18,7 +18,7 @@ const mockLinks: PivotLink[] = [
   {
     id: 'contracts',
     label: 'Related Contracts',
-    onClick: jest.fn(),
+    onClick: vi.fn(),
     badge: 12,
   },
   {
@@ -37,7 +37,7 @@ const mockLinks: PivotLink[] = [
 
 describe('QuickPivotLinks', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Primary Success Path', () => {
@@ -55,7 +55,7 @@ describe('QuickPivotLinks', () => {
     });
 
     it('handles click events correctly', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       const linksWithClick = [
         { ...mockLinks[1], onClick: mockOnClick }
       ];
@@ -102,7 +102,7 @@ describe('QuickPivotLinks', () => {
     });
 
     it('prevents click on disabled links', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       const disabledLink: PivotLink = {
         id: 'disabled',
         label: 'Disabled',
@@ -138,7 +138,7 @@ describe('QuickPivotLinks', () => {
     });
 
     it('supports keyboard navigation', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       const linksWithClick = [
         { ...mockLinks[1], onClick: mockOnClick }
       ];

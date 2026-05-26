@@ -101,7 +101,6 @@ export const QueueHealthWidget: React.FC<QueueHealthWidgetProps> = ({
   className = '',
   testId = 'queue-health-widget',
 }) => {
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [timeUntilRefresh, setTimeUntilRefresh] = useState<number>(refreshInterval);
 
   useEffect(() => {
@@ -112,7 +111,6 @@ export const QueueHealthWidget: React.FC<QueueHealthWidgetProps> = ({
         if (prev <= 1) {
           if (onRefresh) {
             onRefresh();
-            setLastRefresh(new Date());
           }
           return refreshInterval;
         }
@@ -134,7 +132,6 @@ export const QueueHealthWidget: React.FC<QueueHealthWidgetProps> = ({
   const handleManualRefresh = () => {
     if (onRefresh && !loading) {
       onRefresh();
-      setLastRefresh(new Date());
       setTimeUntilRefresh(refreshInterval);
     }
   };

@@ -66,7 +66,7 @@ const AnalyticsDashboard: React.FC = () => {
     return baseData[rangeId as keyof typeof baseData] || baseData['7d'];
   };
 
-  const handleRangeChange = (rangeId: string, range: TimeRange) => {
+  const handleRangeChange = (rangeId: string, _range: TimeRange) => {
     setLoading(true);
     setSelectedRange(rangeId);
     
@@ -162,7 +162,7 @@ const AnalyticsDashboard: React.FC = () => {
           opacity: loading ? 0.6 : 1,
           transition: 'opacity 0.3s ease'
         }}>
-          {chartData.map((metric, index) => (
+          {chartData.map((metric) => (
             <div 
               key={metric.label}
               style={{ 

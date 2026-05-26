@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { describe, expect, it, vi } from "vitest";
 import Portfolio, { type PortfolioState } from "../../src/pages/Portfolio";
 
 function renderPortfolio(overrides?: Partial<PortfolioState>) {
@@ -141,9 +142,9 @@ describe("Portfolio page", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("Open wallet tools"));
-    fireEvent.click(screen.getByText("Browse reward paths"));
-    fireEvent.click(screen.getByText("Browse collectibles"));
+    fireEvent.click(screen.getByTestId("portfolio-wallet-empty-action-0"));
+    fireEvent.click(screen.getByTestId("portfolio-rewards-empty-action-0"));
+    fireEvent.click(screen.getByTestId("portfolio-collectibles-empty-action-0"));
 
     expect(onOpenWallet).toHaveBeenCalledTimes(1);
     expect(onBrowseRewards).toHaveBeenCalledTimes(1);

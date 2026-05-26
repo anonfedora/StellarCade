@@ -3,11 +3,13 @@ resolver = "2"
 
 members = [
     "access-control",
+    "arena-sessions",
     "bonus-rotator",
     "anti-cheat-bounties",
     "bounty-escrow",
     "campaign-claims",
     "creator-royalties",
+    "creator-escrow",
     "creator-drops",
     "achievement-badge",
     "ai-generated-game",
@@ -99,6 +101,7 @@ members = [
     "wordle-clone",
     "queue-rewards",
     "reserve-manager",
+    "reserve-auction",
     "quest-redeemer",
     "squad-match",
     "sponsor-pool",

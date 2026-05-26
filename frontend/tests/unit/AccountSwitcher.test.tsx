@@ -8,8 +8,6 @@ import type { RecentAccount } from '@/components/v1/AccountSwitcher.types';
 
 // ── Mock account-memory-service ──────────────────────────────────────────────
 
-import type { RecentAccount } from '@/components/v1/AccountSwitcher.types';
-
 const mockGetRecentAccounts = vi.fn((): RecentAccount[] => []);
 const mockRecordAccountUsage = vi.fn();
 const mockRemoveAccount = vi.fn();

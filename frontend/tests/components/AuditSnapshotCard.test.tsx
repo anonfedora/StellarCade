@@ -1,10 +1,10 @@
 /**
- * @jest-environment happy-dom
+ * @vitest-environment happy-dom
  */
 
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuditSnapshotCard, type AuditSnapshot } from '@/components/v1/AuditSnapshotCard';
 
 const mockAudit: AuditSnapshot = {
@@ -29,12 +29,12 @@ const mockAudit: AuditSnapshot = {
 describe('AuditSnapshotCard', () => {
   beforeEach(() => {
     // Mock Date for consistent timestamp formatting
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-15T11:00:00Z'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-15T11:00:00Z'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Primary Success Path', () => {
@@ -62,7 +62,7 @@ describe('AuditSnapshotCard', () => {
     });
 
     it('handles click events when onClick is provided', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       render(<AuditSnapshotCard audit={mockAudit} onClick={mockOnClick} />);
       
       fireEvent.click(screen.getByTestId('audit-snapshot-card'));
@@ -109,7 +109,7 @@ describe('AuditSnapshotCard', () => {
     });
 
     it('prevents event bubbling when expand toggle is clicked', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       render(
         <AuditSnapshotCard 
           audit={mockAudit} 
@@ -190,7 +190,7 @@ describe('AuditSnapshotCard', () => {
     });
 
     it('supports keyboard navigation when clickable', () => {
-      const mockOnClick = jest.fn();
+      const mockOnClick = vi.fn();
       render(<AuditSnapshotCard audit={mockAudit} onClick={mockOnClick} />);
       
       const card = screen.getByTestId('audit-snapshot-card');

@@ -129,7 +129,8 @@ describe("HoldingsBreakdownCard", () => {
         currencySymbol="€"
       />,
     );
-    expect(screen.getByText("€3,000.00")).toBeInTheDocument();
+    expect(screen.getByLabelText(/total value €3,000\.00/i)).toBeInTheDocument();
+    expect(screen.getAllByText("€3,000.00")).toHaveLength(2);
   });
 
   // -------------------------------------------------------------------------
