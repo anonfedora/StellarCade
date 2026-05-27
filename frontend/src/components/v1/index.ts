@@ -360,3 +360,7 @@ export type {
 // Issue #751
 export { EmptyHintRow, default as EmptyHintRowDefault } from "./EmptyHintRow";
 export type { EmptyHintRowProps } from "./EmptyHintRow";
+
+// Issue #747
+export { RecentActivityPivotCard, default as RecentActivityPivotCardDefault } from "./RecentActivityPivotCard";
+export type { RecentActivityPivotCardProps, ActivityItem, PivotView } from "./RecentActivityPivotCard";
