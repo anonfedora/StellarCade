@@ -292,3 +292,5 @@ export type {
   ReviewField,
   RiskLevel,
 } from "./ReviewSubmitSheet";
+export { RecentActivityPivotCard, default as RecentActivityPivotCardDefault } from "./RecentActivityPivotCard";
+export type { RecentActivityPivotCardProps, ActivityItem, PivotView } from "./RecentActivityPivotCard";
